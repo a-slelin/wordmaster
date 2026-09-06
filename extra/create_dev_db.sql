@@ -1,0 +1,5 @@
+CREATE DATABASE "WORDMASTER";
+
+CREATE USER word_master_user WITH PASSWORD 'password';
+
+ALTER DATABASE "WORDMASTER" OWNER TO word_master_user;

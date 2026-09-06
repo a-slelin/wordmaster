@@ -1,0 +1,39 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  main:
+    banner-mode: off
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER_NAME}
+    password: ${DB_USER_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 30000
+      pool-name: AuthHikariPool
+
+  jpa:
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+        use_sql_comments: false
+        hbm2ddl:
+          auto: validate
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    database: postgresql
+
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+    drop-first: false
+    enabled: true
+    contexts: prod
+    default-schema: public
