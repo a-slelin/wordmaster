@@ -37,14 +37,13 @@ public class TrainingSession implements BaseEntity {
     @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "deck_id", nullable = false)
-    private User deck;
+    private Deck deck;
 
     @Column(nullable = false,
             name = "started_at")
     private LocalDateTime startedAt;
 
-    @Column(nullable = false,
-            name = "finished_at")
+    @Column(name = "finished_at")
     private LocalDateTime finishedAt;
 
     @Min(0)
@@ -53,8 +52,7 @@ public class TrainingSession implements BaseEntity {
     private Long cardsTotal;
 
     @Min(0)
-    @Column(nullable = false,
-            name = "cards_correct")
+    @Column(name = "cards_correct")
     private Long cardsCorrect;
 
     @ToString.Exclude

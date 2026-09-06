@@ -47,7 +47,8 @@ public class Card extends Audit {
 
     private String transcription;
 
-    private String example_sentence;
+    @Column(name = "example_sentence")
+    private String exampleSentence;
 
     @URL
     @Column(name = "image_url")

@@ -17,7 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Table(name = CardProgress.TABLE_NAME)
 @Entity(name = CardProgress.ENTITY_NAME)
-public class CardProgress implements BaseEntity{
+public class CardProgress implements BaseEntity {
 
     public static final String ENTITY_NAME = "CardProgress";
 
@@ -49,8 +49,7 @@ public class CardProgress implements BaseEntity{
             name = "correct_count")
     private Long correctCount;
 
-    @Column(name = "last_reviewed_at",
-            nullable = false)
+    @Column(name = "last_reviewed_at")
     private LocalDateTime lastReviewedAt;
 
     @Column(name = "next_review_at",
@@ -58,9 +57,9 @@ public class CardProgress implements BaseEntity{
     private LocalDateTime nextReviewAt;
 
     @NotNull
-    @Column(nullable = false, length = 15)
-    @Convert(converter = ComplexityConverter.class)
-    private Complexity complexity;
+    @Min(1)
+    @Column(nullable = false, name = "ease_factor")
+    private Double easeFactor;
 
     @NotNull
     @Column(nullable = false, length = 15)

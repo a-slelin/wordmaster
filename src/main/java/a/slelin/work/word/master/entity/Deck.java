@@ -75,8 +75,7 @@ public class Deck extends Audit {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToMany(fetch = FetchType.LAZY,
-            mappedBy = "decks")
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "deck_tag",
             joinColumns = @JoinColumn(name = "deck_id", nullable = false),
             inverseJoinColumns = @JoinColumn(name = "tag_id", nullable = false))

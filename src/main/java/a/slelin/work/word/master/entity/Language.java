@@ -39,14 +39,12 @@ public class Language implements BaseEntity {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @OneToMany(fetch = FetchType.LAZY,
-            mappedBy = "sourceLanguage",
-            orphanRemoval = true)
+            mappedBy = "sourceLanguage")
     private List<Deck> decksBySourceLanguage;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @OneToMany(fetch = FetchType.LAZY,
-            mappedBy = "targetLanguage",
-            orphanRemoval = true)
+            mappedBy = "targetLanguage")
     private List<Deck> decksByTargetLanguage;
 }
