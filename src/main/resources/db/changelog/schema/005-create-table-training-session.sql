@@ -10,9 +10,9 @@ CREATE TABLE training_session
     user_id       UUID      NOT NULL,
     deck_id       UUID      NOT NULL,
     started_at    TIMESTAMP NOT NULL,
-    finished_at   TIMESTAMP NOT NULL,
+    finished_at   TIMESTAMP,
     cards_total   BIGINT    NOT NULL,
-    cards_correct BIGINT    NOT NULL,
+    cards_correct BIGINT,
     CONSTRAINT fk_training_session_to_user FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_training_session_to_deck FOREIGN KEY (deck_id) REFERENCES deck (id)
 );
