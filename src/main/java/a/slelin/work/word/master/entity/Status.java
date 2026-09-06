@@ -7,19 +7,16 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum Complexity implements StandardEnum {
-
-    ELEMENTARY("elementary", "a"),
-    EASY("easy", "e"),
-    MEDIUM("medium", "m"),
-    HARD("hard", "h"),
-    IMPOSSIBLE("impossible", "i");
+public enum Status implements StandardEnum {
+    NEW("new", "n"),
+    LEARNING("learning", "l"),
+    KNOWN("known", "k");
 
     private final String displayName;
 
     private final String shortName;
 
-    public static Complexity of(String key) {
-        return EnumUtil.of(Complexity.class, key);
+    public static Status of(String key) {
+        return EnumUtil.of(Status.class, key);
     }
 }

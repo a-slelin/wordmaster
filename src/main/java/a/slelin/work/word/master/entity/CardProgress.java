@@ -61,4 +61,9 @@ public class CardProgress {
     @Column(nullable = false, length = 15)
     @Convert(converter = ComplexityConverter.class)
     private Complexity complexity;
+
+    @NotNull
+    @Column(nullable = false, length = 15)
+    @Convert(converter = StatusConverter.class)
+    private Status status;
 }

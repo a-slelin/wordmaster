@@ -45,4 +45,9 @@ public class User extends Audit {
     @Column(length = 50,
             unique = true)
     private String email;
+
+    @NotNull
+    @Column(nullable = false, length = 15)
+    @Convert(converter = RoleConverter.class)
+    private Role role;
 }
