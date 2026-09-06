@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.validator.constraints.URL;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -59,4 +60,24 @@ public class Card extends Audit {
     @Min(1)
     @Column(nullable = false)
     private Long position;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "card",
+            orphanRemoval = true,
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    private List<CardProgress> cardProgresses;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "card",
+            orphanRemoval = true,
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    private List<TrainingAnswer> trainingAnswers;
 }

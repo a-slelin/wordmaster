@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -50,4 +51,34 @@ public class User extends Audit {
     @Column(nullable = false, length = 15)
     @Convert(converter = RoleConverter.class)
     private Role role;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "user",
+            orphanRemoval = true,
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    private List<DeckLikes> deckLikes;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "user",
+            orphanRemoval = true,
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    private List<CardProgress> cardProgresses;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "user",
+            orphanRemoval = true,
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    private List<TrainingSession> trainingSessions;
 }

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -33,4 +35,18 @@ public class Language implements BaseEntity {
     @Size(min = 3, max = 255)
     @Column(nullable = false)
     private String name;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(fetch = FetchType.LAZY,
+            mappedBy = "sourceLanguage",
+            orphanRemoval = true)
+    private List<Deck> decksBySourceLanguage;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(fetch = FetchType.LAZY,
+            mappedBy = "targetLanguage",
+            orphanRemoval = true)
+    private List<Deck> decksByTargetLanguage;
 }

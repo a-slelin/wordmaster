@@ -75,8 +75,30 @@ public class Deck extends Audit {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @OneToMany(fetch = FetchType.LAZY,
-            mappedBy = "deck",
-            orphanRemoval = true)
+    @ManyToMany(fetch = FetchType.LAZY,
+            mappedBy = "decks")
+    @JoinTable(name = "deck_tag",
+            joinColumns = @JoinColumn(name = "deck_id", nullable = false),
+            inverseJoinColumns = @JoinColumn(name = "tag_id", nullable = false))
     private List<Tag> tags;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "deck",
+            orphanRemoval = true,
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    private List<DeckLikes> deckLikes;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "deck",
+            orphanRemoval = true,
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    private List<TrainingSession> trainingSessions;
 }

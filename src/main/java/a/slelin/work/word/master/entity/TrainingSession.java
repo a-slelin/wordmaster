@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -55,4 +56,14 @@ public class TrainingSession implements BaseEntity {
     @Column(nullable = false,
             name = "cards_correct")
     private Long cardsCorrect;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "session",
+            orphanRemoval = true,
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    private List<TrainingAnswer> trainingAnswers;
 }

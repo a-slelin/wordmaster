@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -29,4 +31,13 @@ public class Tag implements BaseEntity {
     @Column(nullable = false,
             unique = true)
     private String name;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @ManyToMany(fetch = FetchType.LAZY,
+            mappedBy = "tags")
+    @JoinTable(name = "deck_tag",
+            joinColumns = @JoinColumn(name = "tag_id", nullable = false),
+            inverseJoinColumns = @JoinColumn(name = "deck_id", nullable = false))
+    private List<Deck> decks;
 }
