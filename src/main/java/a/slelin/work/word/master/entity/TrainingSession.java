@@ -13,10 +13,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-@Entity(name = Card.ENTITY_NAME)
+@Entity(name = TrainingSession.ENTITY_NAME)
 @EqualsAndHashCode
-@Table(name = Card.TABLE_NAME)
-public class TrainingSession {
+@Table(name = TrainingSession.TABLE_NAME)
+public class TrainingSession implements BaseEntity {
 
     public static final String ENTITY_NAME = "TrainingSession";
 

@@ -15,7 +15,7 @@ import java.util.UUID;
 @Entity(name = TrainingAnswer.ENTITY_NAME)
 @EqualsAndHashCode
 @Table(name = TrainingAnswer.TABLE_NAME)
-public class TrainingAnswer {
+public class TrainingAnswer implements BaseEntity{
 
     public static final String ENTITY_NAME = "TrainingAnswer";
 

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @ToString
 @MappedSuperclass
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Audit {
+public class Audit implements BaseEntity {
 
     @Column(name = "created_at",
             nullable = false,

@@ -14,7 +14,7 @@ import lombok.*;
 @AllArgsConstructor
 @Table(name = Tag.TABLE_NAME)
 @Entity(name = Tag.ENTITY_NAME)
-public class Tag {
+public class Tag implements BaseEntity {
 
     public static final String ENTITY_NAME = "Tag";
 

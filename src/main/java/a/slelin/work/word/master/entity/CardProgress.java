@@ -17,7 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Table(name = CardProgress.TABLE_NAME)
 @Entity(name = CardProgress.ENTITY_NAME)
-public class CardProgress {
+public class CardProgress implements BaseEntity{
 
     public static final String ENTITY_NAME = "CardProgress";
 
