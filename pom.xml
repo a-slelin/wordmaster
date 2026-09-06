@@ -86,217 +86,214 @@
 
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
+    <dependencies>
 
-            <!--Specific Libraries Block-->
+        <!--Specific Libraries Block-->
 
-            <!--Lombok-->
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${version.lombok}</version>
-            </dependency>
+        <!--Lombok-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${version.lombok}</version>
+        </dependency>
 
-            <!--Logback-->
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${version.logback}</version>
-            </dependency>
+        <!--Logback-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${version.logback}</version>
+        </dependency>
 
-            <!--MapStruct-->
-            <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct</artifactId>
-                <version>${version.mapstruct}</version>
-            </dependency>
+        <!--MapStruct-->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${version.mapstruct}</version>
+        </dependency>
 
-            <!--PostgreSQL-->
-            <dependency>
-                <groupId>org.postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>${version.postgresql}</version>
-                <scope>runtime</scope>
-            </dependency>
+        <!--PostgreSQL-->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${version.postgresql}</version>
+            <scope>runtime</scope>
+        </dependency>
 
-            <!--H2-->
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${version.h2}</version>
-                <scope>test</scope>
-            </dependency>
+        <!--H2-->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${version.h2}</version>
+            <scope>test</scope>
+        </dependency>
 
-            <!--Junit API-->
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${version.junit}</version>
-                <scope>test</scope>
-            </dependency>
+        <!--Junit API-->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${version.junit}</version>
+            <scope>test</scope>
+        </dependency>
 
-            <!--Testcontainers-->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers</artifactId>
-                <version>${version.testcontainers}</version>
-                <scope>test</scope>
-            </dependency>
+        <!--Testcontainers-->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${version.testcontainers}</version>
+            <scope>test</scope>
+        </dependency>
 
-            <!--Testcontainers Junit-->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-junit-jupiter</artifactId>
-                <version>${version.testcontainers}</version>
-                <scope>test</scope>
-            </dependency>
+        <!--Testcontainers Junit-->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <version>${version.testcontainers}</version>
+            <scope>test</scope>
+        </dependency>
 
-            <!--Testcontainers PostgreSQL-->
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-postgresql</artifactId>
-                <version>${version.testcontainers}</version>
-                <scope>test</scope>
-            </dependency>
+        <!--Testcontainers PostgreSQL-->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <version>${version.testcontainers}</version>
+            <scope>test</scope>
+        </dependency>
 
-            <!--HttpClient-->
-            <dependency>
-                <groupId>org.apache.httpcomponents.client5</groupId>
-                <artifactId>httpclient5</artifactId>
-                <version>${version.httpclient}</version>
-                <scope>test</scope>
-            </dependency>
+        <!--HttpClient-->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>${version.httpclient}</version>
+            <scope>test</scope>
+        </dependency>
 
-            <!--Jackson Databind-->
-            <dependency>
-                <groupId>tools.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
+        <!--Jackson Databind-->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${version.jackson}</version>
+        </dependency>
 
-            <!--Jackson Xml-->
-            <dependency>
-                <groupId>tools.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-xml</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
+        <!--Jackson Xml-->
+        <dependency>
+            <groupId>tools.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>${version.jackson}</version>
+        </dependency>
 
-            <!--Jackson Yaml-->
-            <dependency>
-                <groupId>tools.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
+        <!--Jackson Yaml-->
+        <dependency>
+            <groupId>tools.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${version.jackson}</version>
+        </dependency>
 
-            <!--Spring Framework Libraries Block-->
+        <!--Spring Framework Libraries Block-->
 
-            <!--Spring Framework Data JPA-->
-            <dependency>
-                <groupId>org.springframework.data</groupId>
-                <artifactId>spring-data-jpa</artifactId>
-                <version>${version.spring.framework.data}</version>
-            </dependency>
+        <!--Spring Framework Data JPA-->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-jpa</artifactId>
+            <version>${version.spring.framework.data}</version>
+        </dependency>
 
-            <!--Spring Framework WebMVC-->
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-webmvc</artifactId>
-                <version>${version.spring.framework.web-mvc}</version>
-            </dependency>
+        <!--Spring Framework WebMVC-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>${version.spring.framework.web-mvc}</version>
+        </dependency>
 
-            <!--Spring Framework Security Core-->
-            <dependency>
-                <groupId>org.springframework.security</groupId>
-                <artifactId>spring-security-core</artifactId>
-                <version>${version.spring.framework.security}</version>
-            </dependency>
+        <!--Spring Framework Security Core-->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+            <version>${version.spring.framework.security}</version>
+        </dependency>
 
-            <!--Spring Boot Libraries Block-->
+        <!--Spring Boot Libraries Block-->
 
-            <!--Spring Boot Data Jpa-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-jpa</artifactId>
-                <version>${version.spring.boot}</version>
-            </dependency>
+        <!--Spring Boot Data Jpa-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <version>${version.spring.boot}</version>
+        </dependency>
 
-            <!--Spring Boot Validation-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-validation</artifactId>
-                <version>${version.spring.boot}</version>
-            </dependency>
+        <!--Spring Boot Validation-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+            <version>${version.spring.boot}</version>
+        </dependency>
 
-            <!--Spring Boot Web-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-web</artifactId>
-                <version>${version.spring.boot}</version>
-            </dependency>
+        <!--Spring Boot Web-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${version.spring.boot}</version>
+        </dependency>
 
-            <!--Spring Boot Security-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-security</artifactId>
-                <version>${version.spring.boot}</version>
-            </dependency>
+        <!--Spring Boot Security-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+            <version>${version.spring.boot}</version>
+        </dependency>
 
-            <!--Spring Boot Thymeleaf-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-thymeleaf</artifactId>
-                <version>${version.spring.boot}</version>
-            </dependency>
+        <!--Spring Boot Thymeleaf-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+            <version>${version.spring.boot}</version>
+        </dependency>
 
-            <!--Spring Boot Test-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-test</artifactId>
-                <version>${version.spring.boot}</version>
-                <scope>test</scope>
-            </dependency>
+        <!--Spring Boot Test-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>${version.spring.boot}</version>
+            <scope>test</scope>
+        </dependency>
 
-            <!--Spring Boot Liquibase-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-liquibase</artifactId>
-                <version>${version.spring.boot}</version>
-            </dependency>
+        <!--Spring Boot Liquibase-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-liquibase</artifactId>
+            <version>${version.spring.boot}</version>
+        </dependency>
 
-            <!--Spring Boot Aop-->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-aop</artifactId>
-                <version>${version.spring.boot.aop}</version>
-            </dependency>
+        <!--Spring Boot Aop-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+            <version>${version.spring.boot.aop}</version>
+        </dependency>
 
-            <!--Jakarta Specification Block-->
+        <!--Jakarta Specification Block-->
 
-            <!--Jakarta Validation API-->
-            <dependency>
-                <groupId>jakarta.validation</groupId>
-                <artifactId>jakarta.validation-api</artifactId>
-                <version>${version.jakarta.validation}</version>
-            </dependency>
+        <!--Jakarta Validation API-->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${version.jakarta.validation}</version>
+        </dependency>
 
-            <!--Jakarta Servlet API-->
-            <dependency>
-                <groupId>jakarta.servlet</groupId>
-                <artifactId>jakarta.servlet-api</artifactId>
-                <version>${version.jakarta.servlet-api}</version>
-            </dependency>
+        <!--Jakarta Servlet API-->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${version.jakarta.servlet-api}</version>
+        </dependency>
 
-            <!--Jakarta Persistence API-->
-            <dependency>
-                <groupId>jakarta.persistence</groupId>
-                <artifactId>jakarta.persistence-api</artifactId>
-                <version>${version.jakarta.persistence-api}</version>
-            </dependency>
+        <!--Jakarta Persistence API-->
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>${version.jakarta.persistence-api}</version>
+        </dependency>
 
-        </dependencies>
-    </dependencyManagement>
-
+    </dependencies>
 
     <build>
 
