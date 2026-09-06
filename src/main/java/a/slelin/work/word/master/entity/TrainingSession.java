@@ -2,6 +2,7 @@ package a.slelin.work.word.master.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -11,12 +12,12 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
-@Entity(name = TrainingSession.ENTITY_NAME)
-@EqualsAndHashCode
 @Table(name = TrainingSession.TABLE_NAME)
+@Entity(name = TrainingSession.ENTITY_NAME)
 public class TrainingSession implements BaseEntity {
 
     public static final String ENTITY_NAME = "TrainingSession";
@@ -29,16 +30,21 @@ public class TrainingSession implements BaseEntity {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER,
+            optional = false)
+    @JoinColumn(name = "user_id",
+            nullable = false)
     private User user;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "deck_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER,
+            optional = false)
+    @JoinColumn(name = "deck_id",
+            nullable = false)
     private Deck deck;
 
+    @NotNull
     @Column(nullable = false,
             name = "started_at")
     private LocalDateTime startedAt;
@@ -47,6 +53,7 @@ public class TrainingSession implements BaseEntity {
     private LocalDateTime finishedAt;
 
     @Min(0)
+    @NotNull
     @Column(nullable = false,
             name = "cards_total")
     private Long cardsTotal;

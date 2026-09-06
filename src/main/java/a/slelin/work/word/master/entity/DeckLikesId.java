@@ -7,8 +7,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode
+@AllArgsConstructor
 public class DeckLikesId {
 
     private UUID user;

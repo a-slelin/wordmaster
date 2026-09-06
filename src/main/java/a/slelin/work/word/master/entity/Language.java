@@ -28,7 +28,8 @@ public class Language implements BaseEntity {
 
     @NotBlank
     @Size(min = 3, max = 255)
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false,
+            unique = true)
     private String code;
 
     @NotBlank

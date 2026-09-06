@@ -3,6 +3,7 @@ package a.slelin.work.word.master.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.validator.constraints.URL;
@@ -16,9 +17,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(callSuper = true)
+@Table(name = Card.TABLE_NAME)
 @Entity(name = Card.ENTITY_NAME)
 @EqualsAndHashCode(callSuper = false)
-@Table(name = Card.TABLE_NAME)
 public class Card extends Audit {
 
     public static final String ENTITY_NAME = "Card";
@@ -31,8 +32,10 @@ public class Card extends Audit {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "deck_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER,
+            optional = false)
+    @JoinColumn(name = "deck_id",
+            nullable = false)
     private Deck deck;
 
     @NotBlank
@@ -59,6 +62,7 @@ public class Card extends Audit {
     private String audioUrl;
 
     @Min(1)
+    @NotNull
     @Column(nullable = false)
     private Long position;
 

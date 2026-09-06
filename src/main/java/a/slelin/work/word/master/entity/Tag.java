@@ -34,6 +34,7 @@ public class Tag implements BaseEntity {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToMany(fetch = FetchType.LAZY, mappedBy = "tags")
+    @ManyToMany(fetch = FetchType.LAZY,
+            mappedBy = "tags")
     private List<Deck> decks;
 }

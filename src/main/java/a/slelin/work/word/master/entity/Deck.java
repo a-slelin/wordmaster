@@ -3,6 +3,7 @@ package a.slelin.work.word.master.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -15,9 +16,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(callSuper = true)
+@Table(name = Deck.TABLE_NAME)
 @Entity(name = Deck.ENTITY_NAME)
 @EqualsAndHashCode(callSuper = false)
-@Table(name = Deck.TABLE_NAME)
 public class Deck extends Audit {
 
     public static final String ENTITY_NAME = "Deck";
@@ -30,8 +31,10 @@ public class Deck extends Audit {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER,
+            optional = false)
+    @JoinColumn(name = "owner_id",
+            nullable = false)
     private User owner;
 
     @ToString.Exclude
@@ -49,14 +52,18 @@ public class Deck extends Audit {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "source_language_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER,
+            optional = false)
+    @JoinColumn(name = "source_language_id",
+            nullable = false)
     private Language sourceLanguage;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "target_language_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER,
+            optional = false)
+    @JoinColumn(name = "target_language_id",
+            nullable = false)
     private Language targetLanguage;
 
     @Column(nullable = false,
@@ -64,11 +71,13 @@ public class Deck extends Audit {
     private boolean isPublic;
 
     @Min(0)
+    @NotNull
     @Column(nullable = false,
             name = "likes_count")
     private Long likesCount;
 
     @Min(0)
+    @NotNull
     @Column(nullable = false,
             name = "copies_count")
     private Long copiesCount;

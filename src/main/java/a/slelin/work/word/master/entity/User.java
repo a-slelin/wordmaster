@@ -13,9 +13,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(callSuper = true)
+@Table(name = User.TABLE_NAME)
 @Entity(name = User.ENTITY_NAME)
 @EqualsAndHashCode(callSuper = false)
-@Table(name = User.TABLE_NAME)
 public class User extends Audit {
 
     public static final String ENTITY_NAME = "User";

@@ -29,22 +29,28 @@ public class CardProgress implements BaseEntity {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER,
+            optional = false)
+    @JoinColumn(name = "user_id",
+            nullable = false)
     private User user;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "card_id", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER,
+            optional = false)
+    @JoinColumn(name = "card_id",
+            nullable = false)
     private Card card;
 
     @Min(0)
+    @NotNull
     @Column(nullable = false,
             name = "incorrect_count")
     private Long incorrectCount;
 
     @Min(0)
+    @NotNull
     @Column(nullable = false,
             name = "correct_count")
     private Long correctCount;
@@ -52,13 +58,13 @@ public class CardProgress implements BaseEntity {
     @Column(name = "last_reviewed_at")
     private LocalDateTime lastReviewedAt;
 
-    @Column(name = "next_review_at",
-            nullable = false)
+    @Column(name = "next_review_at")
     private LocalDateTime nextReviewAt;
 
-    @NotNull
     @Min(1)
-    @Column(nullable = false, name = "ease_factor")
+    @NotNull
+    @Column(nullable = false,
+            name = "ease_factor")
     private Double easeFactor;
 
     @NotNull
