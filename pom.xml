@@ -1,0 +1,408 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>a.slelin.work</groupId>
+    <artifactId>word.master</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <packaging>jar</packaging>
+
+    <name>Word Master</name>
+
+    <description>Word Master Web Application</description>
+
+    <url>https://github.com/a-slelin/wordmaster</url>
+
+    <developers>
+
+        <developer>
+            <id>1</id>
+            <name>Alexander Slelin</name>
+            <roles>
+                <role>Maintainer</role>
+            </roles>
+            <url>https://github.com/a-slelin</url>
+            <email>a.slelin.work@mail.ru</email>
+        </developer>
+
+    </developers>
+
+    <repositories>
+
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+
+    </repositories>
+
+    <properties>
+
+        <lastCheckVersion>06.09.2026</lastCheckVersion>
+
+        <!--General-->
+        <encoding>UTF-8</encoding>
+        <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>
+        <java.version>25</java.version>
+        <skipTests>true</skipTests>
+
+        <!--Plugins-->
+        <version.plugin.clean>3.5.0</version.plugin.clean>
+        <version.plugin.compile>3.15.0</version.plugin.compile>
+        <version.plugin.surefire>3.5.6</version.plugin.surefire>
+        <version.plugin.failsafe>3.5.6</version.plugin.failsafe>
+        <version.plugin.jar>3.5.1</version.plugin.jar>
+        <version.plugin.install>3.1.4</version.plugin.install>
+
+        <!--Libraries-->
+
+        <!--Specific Libraries-->
+        <version.lombok>1.18.48</version.lombok>
+        <version.logback>1.6.3</version.logback>
+        <version.mapstruct>1.6.3</version.mapstruct>
+        <version.postgresql>42.7.13</version.postgresql>
+        <version.h2>2.4.240</version.h2>
+        <version.junit>6.1.3</version.junit>
+        <version.mockito>5.23.0</version.mockito>
+        <version.testcontainers>2.0.5</version.testcontainers>
+        <version.httpclient>5.6.4</version.httpclient>
+        <version.jackson>3.2.2</version.jackson>
+
+        <!--Spring Framework Libraries-->
+        <version.spring.framework.data>4.1.1</version.spring.framework.data>
+        <version.spring.framework.web-mvc>7.0.9</version.spring.framework.web-mvc>
+        <version.spring.framework.security>7.1.1</version.spring.framework.security>
+
+        <!--Spring Boot Libraries-->
+        <version.spring.boot>4.1.1</version.spring.boot>
+        <version.spring.boot.aop>3.5.16</version.spring.boot.aop>
+
+        <!--Jakarta Specifications-->
+        <version.jakarta.validation>3.1.1</version.jakarta.validation>
+        <version.jakarta.servlet-api>6.1.0</version.jakarta.servlet-api>
+        <version.jakarta.persistence-api>3.2.0</version.jakarta.persistence-api>
+
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!--Specific Libraries Block-->
+
+            <!--Lombok-->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${version.lombok}</version>
+            </dependency>
+
+            <!--Logback-->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${version.logback}</version>
+            </dependency>
+
+            <!--MapStruct-->
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${version.mapstruct}</version>
+            </dependency>
+
+            <!--PostgreSQL-->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${version.postgresql}</version>
+                <scope>runtime</scope>
+            </dependency>
+
+            <!--H2-->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${version.h2}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--Junit API-->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${version.junit}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--Testcontainers-->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${version.testcontainers}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--Testcontainers Junit-->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-junit-jupiter</artifactId>
+                <version>${version.testcontainers}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--Testcontainers PostgreSQL-->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-postgresql</artifactId>
+                <version>${version.testcontainers}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--HttpClient-->
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>${version.httpclient}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--Jackson Databind-->
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+
+            <!--Jackson Xml-->
+            <dependency>
+                <groupId>tools.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-xml</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+
+            <!--Jackson Yaml-->
+            <dependency>
+                <groupId>tools.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+
+            <!--Spring Framework Libraries Block-->
+
+            <!--Spring Framework Data JPA-->
+            <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-jpa</artifactId>
+                <version>${version.spring.framework.data}</version>
+            </dependency>
+
+            <!--Spring Framework WebMVC-->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-webmvc</artifactId>
+                <version>${version.spring.framework.web-mvc}</version>
+            </dependency>
+
+            <!--Spring Framework Security Core-->
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-core</artifactId>
+                <version>${version.spring.framework.security}</version>
+            </dependency>
+
+            <!--Spring Boot Libraries Block-->
+
+            <!--Spring Boot Data Jpa-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-jpa</artifactId>
+                <version>${version.spring.boot}</version>
+            </dependency>
+
+            <!--Spring Boot Validation-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-validation</artifactId>
+                <version>${version.spring.boot}</version>
+            </dependency>
+
+            <!--Spring Boot Web-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${version.spring.boot}</version>
+            </dependency>
+
+            <!--Spring Boot Security-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-security</artifactId>
+                <version>${version.spring.boot}</version>
+            </dependency>
+
+            <!--Spring Boot Thymeleaf-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-thymeleaf</artifactId>
+                <version>${version.spring.boot}</version>
+            </dependency>
+
+            <!--Spring Boot Test-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${version.spring.boot}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!--Spring Boot Liquibase-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-liquibase</artifactId>
+                <version>${version.spring.boot}</version>
+            </dependency>
+
+            <!--Spring Boot Aop-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-aop</artifactId>
+                <version>${version.spring.boot.aop}</version>
+            </dependency>
+
+            <!--Jakarta Specification Block-->
+
+            <!--Jakarta Validation API-->
+            <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${version.jakarta.validation}</version>
+            </dependency>
+
+            <!--Jakarta Servlet API-->
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${version.jakarta.servlet-api}</version>
+            </dependency>
+
+            <!--Jakarta Persistence API-->
+            <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>${version.jakarta.persistence-api}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+
+    <build>
+
+        <pluginManagement>
+            <plugins>
+
+                <!--Clean plugin-->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${version.plugin.clean}</version>
+                </plugin>
+
+                <!--Compile plugin-->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${version.plugin.compile}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <release>${java.version}</release>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${version.lombok}</version>
+                            </path>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${version.mapstruct}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <compilerArgs>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+
+                <!--Surefire plugin-->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${version.plugin.surefire}</version>
+                    <configuration>
+                        <argLine>
+                            -javaagent:${settings.localRepository}/org/mockito/mockito-core/${version.mockito}/mockito-core-${version.mockito}.jar
+                        </argLine>
+                    </configuration>
+                </plugin>
+
+                <!--Failsafe plugin-->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${version.plugin.failsafe}</version>
+                    <configuration>
+                        <argLine>
+                            -javaagent:${settings.localRepository}/org/mockito/mockito-core/${version.mockito}/mockito-core-${version.mockito}.jar
+                            -Xshare:off
+                        </argLine>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!--Jar plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${version.plugin.jar}</version>
+                </plugin>
+
+                <!--Install plugin-->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${version.plugin.install}</version>
+                </plugin>
+
+                <!--Spring Boot plugin-->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${version.spring.boot}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+        <finalName>WordMaster</finalName>
+
+    </build>
+
+</project>
