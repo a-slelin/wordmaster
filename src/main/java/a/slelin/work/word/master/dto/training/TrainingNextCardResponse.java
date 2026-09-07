@@ -16,7 +16,7 @@ public record TrainingNextCardResponse(@NotBlank String sessionId,
                                        @NotBlank String cardId,
                                        @NotBlank String word,
                                        String transcription,
-                                       @NotNull @Min(0) Long cardRemaining) implements ResponseDto {
+                                       @NotNull @Min(0) Long cardsRemaining) implements ResponseDto {
 
     @NonNull
     @Override
@@ -26,7 +26,7 @@ public record TrainingNextCardResponse(@NotBlank String sessionId,
         parts.add("cardId = " + cardId);
         parts.add("word = " + word);
         if (transcription != null) parts.add("transcription = " + transcription);
-        parts.add("cardRemaining = " + cardRemaining);
+        parts.add("cardRemaining = " + cardsRemaining);
         return "TrainingNextCardResponse: [" + String.join(", ", parts) + "]";
     }
 
@@ -40,12 +40,12 @@ public record TrainingNextCardResponse(@NotBlank String sessionId,
         return Objects.equals(word, that.word) &&
                 Objects.equals(cardId, that.cardId) &&
                 Objects.equals(sessionId, that.sessionId) &&
-                Objects.equals(cardRemaining, that.cardRemaining) &&
+                Objects.equals(cardsRemaining, that.cardsRemaining) &&
                 Objects.equals(transcription, that.transcription);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sessionId, cardId, word, transcription, cardRemaining);
+        return Objects.hash(sessionId, cardId, word, transcription, cardsRemaining);
     }
 }

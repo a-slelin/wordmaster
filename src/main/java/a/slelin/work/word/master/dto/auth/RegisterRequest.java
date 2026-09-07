@@ -2,6 +2,7 @@ package a.slelin.work.word.master.dto.auth;
 
 import a.slelin.work.word.master.dto.RequestDto;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -10,7 +11,7 @@ import java.util.Objects;
 @Builder
 public record RegisterRequest(@NotBlank String username,
                               @NotBlank String email,
-                              @NotBlank String password) implements RequestDto {
+                              @NotBlank @Size(min = 8) String password) implements RequestDto {
 
     @NonNull
     @Override

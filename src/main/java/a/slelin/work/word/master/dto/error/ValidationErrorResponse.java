@@ -1,5 +1,6 @@
 package a.slelin.work.word.master.dto.error;
 
+import a.slelin.work.word.master.dto.ResponseDto;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
@@ -15,10 +16,10 @@ import java.util.Objects;
 @Builder
 public record ValidationErrorResponse(@NotBlank String field,
                                       String message,
-                                      @NotNull Object value,
+                                      Object value,
                                       String type,
                                       String path,
-                                      Map<String, Object> details) {
+                                      Map<String, Object> details) implements ResponseDto {
 
     @SuppressWarnings("unused")
     public static List<ValidationErrorResponse> fromException(ConstraintViolationException e) {

@@ -14,7 +14,7 @@ import java.util.Objects;
 @Builder
 public record TrainingAnswerResponse(@NotBlank String cardId,
                                      @NotNull @Valid CardProgressResponse updatedProgress,
-                                     @NotNull @Valid TrainingNextCardResponse nextCard) implements ResponseDto {
+                                     @Valid TrainingNextCardResponse nextCard) implements ResponseDto {
 
     @NonNull
     @Override

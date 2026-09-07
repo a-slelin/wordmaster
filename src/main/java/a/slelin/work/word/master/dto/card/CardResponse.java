@@ -23,7 +23,7 @@ public record CardResponse(@NotBlank String id,
                            @NotBlank String word,
                            @NotBlank String translation,
                            String transcription,
-                           String exampleSource,
+                           String exampleSentence,
                            @URL String imageUrl,
                            @URL String audioUrl,
                            @NotNull @Min(1) Long position,
@@ -43,7 +43,7 @@ public record CardResponse(@NotBlank String id,
         parts.add("word = " + word);
         parts.add("translation = " + translation);
         if (transcription != null) parts.add("transcription = " + transcription);
-        if (exampleSource != null) parts.add("exampleSource = " + exampleSource);
+        if (exampleSentence != null) parts.add("exampleSentence = " + exampleSentence);
         if (imageUrl != null) parts.add("imageUrl = " + imageUrl);
         if (audioUrl != null) parts.add("audioUrl = " + audioUrl);
         parts.add("position = " + position);
@@ -68,7 +68,7 @@ public record CardResponse(@NotBlank String id,
                 Objects.equals(audioUrl, that.audioUrl) &&
                 Objects.equals(translation, that.translation) &&
                 Objects.equals(transcription, that.transcription) &&
-                Objects.equals(exampleSource, that.exampleSource) &&
+                Objects.equals(exampleSentence, that.exampleSentence) &&
                 Objects.equals(createdAt, that.createdAt) &&
                 Objects.equals(updatedAt, that.updatedAt);
     }
@@ -76,6 +76,6 @@ public record CardResponse(@NotBlank String id,
     @Override
     public int hashCode() {
         return Objects.hash(id, deckId, word, translation, transcription,
-                exampleSource, imageUrl, audioUrl, position, createdAt, updatedAt);
+                exampleSentence, imageUrl, audioUrl, position, createdAt, updatedAt);
     }
 }

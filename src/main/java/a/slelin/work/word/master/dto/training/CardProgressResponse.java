@@ -20,8 +20,8 @@ import java.util.Objects;
 public record CardProgressResponse(@NotBlank String cardId,
                                    @NotBlank String status,
                                    @NotNull @Min(1) Double easeFactor,
-                                   @NotNull @Min(0) Long intervalDays,
-                                   @NotNull Boolean repetitions,
+                                   @NotNull @Min(0) Integer intervalDays,
+                                   @NotNull @Min(0) Long repetitions,
                                    @NotNull @Min(0) Long correctCount,
                                    @NotNull @Min(0) Long incorrectCount,
                                    @JsonSerialize(using = LocalDateTimeSerializer.class)

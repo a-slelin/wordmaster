@@ -2,6 +2,8 @@ package a.slelin.work.word.master.dto.deck;
 
 import a.slelin.work.word.master.dto.ResponseDto;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -10,9 +12,9 @@ import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record DeckCopyResponse(@NonNull @Min(1) Long newDeckId,
-                               @NonNull @Min(1) Long sourceDeckId,
-                               @NonNull @Min(0) Long cardsCopiedCount) implements ResponseDto {
+public record DeckCopyResponse(@NotBlank String newDeckId,
+                               @NotBlank String sourceDeckId,
+                               @NotNull @Min(0) Long cardsCopiedCount) implements ResponseDto {
 
     @NonNull
     @Override

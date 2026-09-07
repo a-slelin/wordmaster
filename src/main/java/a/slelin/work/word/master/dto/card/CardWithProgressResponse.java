@@ -23,7 +23,7 @@ public record CardWithProgressResponse(@NotBlank String id,
                                        @NotBlank String word,
                                        @NotBlank String translation,
                                        String transcription,
-                                       String exampleSource,
+                                       String exampleSentence,
                                        @URL String imageUrl,
                                        @URL String audioUrl,
                                        @NotNull @Min(1) Long position,
@@ -36,7 +36,7 @@ public record CardWithProgressResponse(@NotBlank String id,
                                        @NotBlank String status,
                                        @NotNull @Min(1) Double easeFactor,
                                        @NotNull @Min(0) Integer intervalDays,
-                                       @NotNull Boolean repetitions,
+                                       @NotNull @Min(0) Long repetitions,
                                        @NotNull @Min(0) Long correctCount,
                                        @NotNull @Min(0) Long incorrectCount,
                                        @JsonSerialize(using = LocalDateTimeSerializer.class)
@@ -55,7 +55,7 @@ public record CardWithProgressResponse(@NotBlank String id,
         parts.add("word = " + word);
         parts.add("translation = " + translation);
         if (transcription != null) parts.add("transcription = " + transcription);
-        if (exampleSource != null) parts.add("exampleSource = " + exampleSource);
+        if (exampleSentence != null) parts.add("exampleSentence = " + exampleSentence);
         if (imageUrl != null) parts.add("imageUrl = " + imageUrl);
         if (audioUrl != null) parts.add("audioUrl = " + audioUrl);
         parts.add("position = " + position);
@@ -93,7 +93,7 @@ public record CardWithProgressResponse(@NotBlank String id,
                 Objects.equals(repetitions, that.repetitions) &&
                 Objects.equals(incorrectCount, that.incorrectCount) &&
                 Objects.equals(transcription, that.transcription) &&
-                Objects.equals(exampleSource, that.exampleSource) &&
+                Objects.equals(exampleSentence, that.exampleSentence) &&
                 Objects.equals(intervalDays, that.intervalDays) &&
                 Objects.equals(createdAt, that.createdAt) &&
                 Objects.equals(updatedAt, that.updatedAt) &&
@@ -104,7 +104,7 @@ public record CardWithProgressResponse(@NotBlank String id,
     @Override
     public int hashCode() {
         return Objects.hash(id, deckId, word, translation, transcription,
-                exampleSource, imageUrl, audioUrl, position, createdAt,
+                exampleSentence, imageUrl, audioUrl, position, createdAt,
                 updatedAt, status, easeFactor, intervalDays, repetitions,
                 correctCount, incorrectCount, lastReviewedAt, nextReviewAt);
     }

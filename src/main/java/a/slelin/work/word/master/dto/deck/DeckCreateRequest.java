@@ -30,24 +30,6 @@ public record DeckCreateRequest(@NotBlank String title,
         this(title, null, sourceLanguageId, targetLanguageId, isPublic);
     }
 
-    public void addTag(Long tagId) {
-        if (tagId == null) {
-            return;
-        }
-
-        if (!tagIds.contains(tagId)) {
-            tagIds.add(tagId);
-        }
-    }
-
-    public void removeTag(Long tagId) {
-        if (tagId == null) {
-            return;
-        }
-
-        tagIds.remove(tagId);
-    }
-
     @NonNull
     @Override
     public String toString() {

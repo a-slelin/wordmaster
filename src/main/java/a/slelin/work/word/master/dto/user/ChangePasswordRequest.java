@@ -2,14 +2,15 @@ package a.slelin.work.word.master.dto.user;
 
 import a.slelin.work.word.master.dto.RequestDto;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
 import java.util.Objects;
 
 @Builder
-public record ChangePasswordRequest(@NotBlank String oldPassword,
-                                    @NotBlank String newPassword) implements RequestDto {
+public record ChangePasswordRequest(@NotBlank @Size(min = 8) String oldPassword,
+                                    @NotBlank @Size(min = 8) String newPassword) implements RequestDto {
 
     @NonNull
     @Override

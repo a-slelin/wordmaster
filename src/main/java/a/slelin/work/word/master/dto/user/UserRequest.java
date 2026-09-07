@@ -1,6 +1,7 @@
 package a.slelin.work.word.master.dto.user;
 
 import a.slelin.work.word.master.dto.RequestDto;
+import jakarta.validation.constraints.Email;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -8,7 +9,7 @@ import java.util.Objects;
 
 @Builder
 public record UserRequest(String username,
-                          String email) implements RequestDto {
+                          @Email String email) implements RequestDto {
 
     @NonNull
     @Override
