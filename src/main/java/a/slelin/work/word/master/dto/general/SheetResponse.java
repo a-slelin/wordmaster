@@ -1,5 +1,6 @@
-package a.slelin.work.word.master.dto;
+package a.slelin.work.word.master.dto.general;
 
+import a.slelin.work.word.master.dto.ResponseDto;
 import a.slelin.work.word.master.entity.BaseEntity;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

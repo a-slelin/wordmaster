@@ -1,5 +1,6 @@
-package a.slelin.work.word.master.dto;
+package a.slelin.work.word.master.dto.language;
 
+import a.slelin.work.word.master.dto.RequestDto;
 import lombok.Builder;
 import lombok.NonNull;
 

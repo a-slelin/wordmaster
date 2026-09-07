@@ -1,5 +1,6 @@
-package a.slelin.work.word.master.dto;
+package a.slelin.work.word.master.dto.tag;
 
+import a.slelin.work.word.master.dto.ResponseDto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

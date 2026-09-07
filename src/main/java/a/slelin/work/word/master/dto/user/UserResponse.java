@@ -1,5 +1,6 @@
-package a.slelin.work.word.master.dto;
+package a.slelin.work.word.master.dto.user;
 
+import a.slelin.work.word.master.dto.ResponseDto;
 import a.slelin.work.word.master.utility.DateTimeUtil;
 import a.slelin.work.word.master.utility.LocalDateTimeDeserializer;
 import a.slelin.work.word.master.utility.LocalDateTimeSerializer;

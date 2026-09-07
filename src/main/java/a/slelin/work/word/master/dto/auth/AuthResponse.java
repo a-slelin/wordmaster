@@ -1,7 +1,7 @@
 package a.slelin.work.word.master.dto.auth;
 
 import a.slelin.work.word.master.dto.ResponseDto;
-import a.slelin.work.word.master.dto.UserResponse;
+import a.slelin.work.word.master.dto.user.UserResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

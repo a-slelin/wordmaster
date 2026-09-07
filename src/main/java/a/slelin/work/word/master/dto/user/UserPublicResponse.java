@@ -1,5 +1,6 @@
-package a.slelin.work.word.master.dto;
+package a.slelin.work.word.master.dto.user;
 
+import a.slelin.work.word.master.dto.ResponseDto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.NonNull;
