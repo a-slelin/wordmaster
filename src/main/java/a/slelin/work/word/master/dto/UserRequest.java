@@ -3,30 +3,30 @@ package a.slelin.work.word.master.dto;
 import lombok.Builder;
 import lombok.NonNull;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 @Builder
 public record UserRequest(String username,
-                          String password,
-                          String email,
-                          String role) implements RequestDto {
+                          String email) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        List<String> parts = new ArrayList<>();
+        String str = "UserRequest: [";
 
-        if (username != null) parts.add("username = " + username);
-        if (email != null) parts.add("email = " + email);
-        if (role != null) parts.add("role = " + role);
-
-        if (parts.isEmpty()) {
-            return "UserRequest: [" + (password == null ? "empty" : "hidden") + "]";
+        if (username == null && email == null) {
+            str += "empty";
         }
 
-        return "UserRequest: [" + String.join(", ", parts) + "]";
+        if (username != null) {
+            str += "username = %s".formatted(username);
+        }
+
+        if (email != null) {
+            str += ", email = %s".formatted(email);
+        }
+
+        return str + "]";
     }
 
     @Override
@@ -36,14 +36,12 @@ public record UserRequest(String username,
         }
 
         UserRequest user = (UserRequest) o;
-        return Objects.equals(role, user.role) &&
-                Objects.equals(email, user.email) &&
-                Objects.equals(username, user.username) &&
-                Objects.equals(password, user.password);
+        return Objects.equals(email, user.email) &&
+                Objects.equals(username, user.username);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(username, password, email, role);
+        return Objects.hash(username, email);
     }
 }
