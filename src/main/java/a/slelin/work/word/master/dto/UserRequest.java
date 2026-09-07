@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record UserWD(String username,
-                     String password,
-                     String email,
-                     String role) implements WriteDto {
+public record UserRequest(String username,
+                          String password,
+                          String email,
+                          String role) implements RequestDto {
 
     @NonNull
     @Override
@@ -23,10 +23,10 @@ public record UserWD(String username,
         if (role != null) parts.add("role = " + role);
 
         if (parts.isEmpty()) {
-            return "UserWD: [" + (password == null ? "empty" : "hidden") + "]";
+            return "UserRequest: [" + (password == null ? "empty" : "hidden") + "]";
         }
 
-        return "UserWD: [" + String.join(", ", parts) + "]";
+        return "UserRequest: [" + String.join(", ", parts) + "]";
     }
 
     @Override
@@ -35,7 +35,7 @@ public record UserWD(String username,
             return false;
         }
 
-        UserWD user = (UserWD) o;
+        UserRequest user = (UserRequest) o;
         return Objects.equals(role, user.role) &&
                 Objects.equals(email, user.email) &&
                 Objects.equals(username, user.username) &&

@@ -6,12 +6,12 @@ import lombok.NonNull;
 import java.util.Objects;
 
 @Builder
-public record TagWD(String name) implements WriteDto {
+public record TagRequest(String name) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        return name == null ? "TagWD: [empty]" : "TagWD: [name = %s]".formatted(name);
+        return name == null ? "TagRequest: [empty]" : "TagRequest: [name = %s]".formatted(name);
     }
 
     @Override
@@ -20,7 +20,7 @@ public record TagWD(String name) implements WriteDto {
             return false;
         }
 
-        TagWD tag = (TagWD) o;
+        TagRequest tag = (TagRequest) o;
         return Objects.equals(name, tag.name);
     }
 

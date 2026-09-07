@@ -10,16 +10,16 @@ import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record SortDto(@NotNull @Pattern(regexp = "^[A-Za-z._]+$") String property,
-                      @NotNull @Pattern(regexp = "^(?i)asc|desc$") String direction) implements ReadDto {
+public record SortResponse(@NotNull @Pattern(regexp = "^[A-Za-z._]+$") String property,
+                           @NotNull @Pattern(regexp = "^(?i)asc|desc$") String direction) implements ResponseDto {
 
-    public static List<SortDto> of(Sort sort) {
+    public static List<SortResponse> of(Sort sort) {
         if (sort == null) {
             throw new IllegalArgumentException("Sort must not be null.");
         }
 
         return sort.stream()
-                .map(order -> SortDto.builder()
+                .map(order -> SortResponse.builder()
                         .property(order.getProperty())
                         .direction(order.getDirection().toString().toLowerCase())
                         .build())
@@ -29,7 +29,7 @@ public record SortDto(@NotNull @Pattern(regexp = "^[A-Za-z._]+$") String propert
     @NonNull
     @Override
     public String toString() {
-        return "SortDto: [property = %s, direction = %s]"
+        return "SortResponse: [property = %s, direction = %s]"
                 .formatted(property, direction.toUpperCase());
     }
 
@@ -39,7 +39,7 @@ public record SortDto(@NotNull @Pattern(regexp = "^[A-Za-z._]+$") String propert
             return false;
         }
 
-        SortDto sort = (SortDto) o;
+        SortResponse sort = (SortResponse) o;
         return Objects.equals(property, sort.property) &&
                 Objects.equals(direction, sort.direction);
     }

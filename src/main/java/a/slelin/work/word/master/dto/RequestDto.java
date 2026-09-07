@@ -2,8 +2,6 @@ package a.slelin.work.word.master.dto;
 
 import a.slelin.work.word.master.utility.MarkerInterface;
 
-import java.io.Serializable;
-
 @MarkerInterface
-public interface Dto extends Serializable {
+public interface RequestDto extends Dto {
 }

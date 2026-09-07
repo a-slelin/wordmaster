@@ -12,25 +12,25 @@ import java.util.Objects;
 import java.util.function.Function;
 
 @Builder
-public record SheetDto<D extends ReadDto>(@NotNull @Valid List<D> content,
-                                          @NotNull @Valid PageDto page) implements ReadDto {
+public record SheetResponse<D extends ResponseDto>(@NotNull @Valid List<D> content,
+                                                   @NotNull @Valid PageResponse page) implements ResponseDto {
 
     @SuppressWarnings("unused")
-    public static <E extends BaseEntity, D extends ReadDto> SheetDto<D> of(Page<E> page, Function<E, D> mapper) {
+    public static <E extends BaseEntity, D extends ResponseDto> SheetResponse<D> of(Page<E> page, Function<E, D> mapper) {
         if (page == null || mapper == null) {
             throw new IllegalArgumentException("Page and mapper must not be null.");
         }
 
         List<D> content = page.stream().map(mapper).toList();
-        PageDto pageDto = PageDto.of(page);
+        PageResponse pageDto = PageResponse.of(page);
 
-        return new SheetDto<>(content, pageDto);
+        return new SheetResponse<>(content, pageDto);
     }
 
     @NonNull
     @Override
     public String toString() {
-        return "SheetDto: [hashcode = %d]".formatted(this.hashCode());
+        return "SheetResponse: [hashcode = %d]".formatted(this.hashCode());
     }
 
     @Override
@@ -39,7 +39,7 @@ public record SheetDto<D extends ReadDto>(@NotNull @Valid List<D> content,
             return false;
         }
 
-        SheetDto<?> sheetDto = (SheetDto<?>) o;
+        SheetResponse<?> sheetDto = (SheetResponse<?>) o;
         return Objects.equals(page, sheetDto.page) &&
                 Objects.equals(content, sheetDto.content);
     }

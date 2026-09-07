@@ -7,15 +7,15 @@ import lombok.NonNull;
 import java.util.Objects;
 
 @Builder
-public record UserRD(@NotBlank String id,
-                     @NotBlank String username,
-                     @NotBlank String email,
-                     @NotBlank String role) implements ReadDto {
+public record UserResponse(@NotBlank String id,
+                           @NotBlank String username,
+                           @NotBlank String email,
+                           @NotBlank String role) implements ResponseDto {
 
     @NonNull
     @Override
     public String toString() {
-        return "UserRD: [id = %s, username = %s, email = %s, role = %s]"
+        return "UserResponse: [id = %s, username = %s, email = %s, role = %s]"
                 .formatted(id, username, email, role);
     }
 
@@ -25,7 +25,7 @@ public record UserRD(@NotBlank String id,
             return false;
         }
 
-        UserRD user = (UserRD) o;
+        UserResponse user = (UserResponse) o;
         return Objects.equals(id, user.id) &&
                 Objects.equals(role, user.role) &&
                 Objects.equals(email, user.email) &&

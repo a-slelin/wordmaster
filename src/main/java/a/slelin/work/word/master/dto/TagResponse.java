@@ -9,13 +9,13 @@ import lombok.NonNull;
 import java.util.Objects;
 
 @Builder
-public record TagRD(@NotNull @Min(1) Long id,
-                    @NotBlank String name) implements ReadDto {
+public record TagResponse(@NotNull @Min(1) Long id,
+                          @NotBlank String name) implements ResponseDto {
 
     @NonNull
     @Override
     public String toString() {
-        return "TagRD: [id = %d, name = %s]"
+        return "TagResponse: [id = %d, name = %s]"
                 .formatted(id, name);
     }
 
@@ -25,7 +25,7 @@ public record TagRD(@NotNull @Min(1) Long id,
             return false;
         }
 
-        TagRD tag = (TagRD) o;
+        TagResponse tag = (TagResponse) o;
         return Objects.equals(id, tag.id) &&
                 Objects.equals(name, tag.name);
     }

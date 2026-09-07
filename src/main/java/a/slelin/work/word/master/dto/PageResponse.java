@@ -11,24 +11,24 @@ import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record PageDto(@NotNull @Min(0) Integer number,
-                      @NotNull @Min(1) Integer size,
-                      @NotNull @Valid List<SortDto> sorts,
-                      @NotNull @Min(0) Long totalElements,
-                      @NotNull @Min(0) Integer totalPages,
-                      boolean first,
-                      boolean last,
-                      boolean empty) implements ReadDto {
+public record PageResponse(@NotNull @Min(0) Integer number,
+                           @NotNull @Min(1) Integer size,
+                           @NotNull @Valid List<SortResponse> sorts,
+                           @NotNull @Min(0) Long totalElements,
+                           @NotNull @Min(0) Integer totalPages,
+                           boolean first,
+                           boolean last,
+                           boolean empty) implements ResponseDto {
 
-    public static PageDto of(Page<?> page) {
+    public static PageResponse of(Page<?> page) {
         if (page == null) {
             throw new IllegalArgumentException("Page must be not null.");
         }
 
-        return PageDto.builder()
+        return PageResponse.builder()
                 .number(page.getNumber())
                 .size(page.getSize())
-                .sorts(SortDto.of(page.getSort()))
+                .sorts(SortResponse.of(page.getSort()))
                 .totalElements(page.getTotalElements())
                 .totalPages(page.getTotalPages())
                 .first(page.isFirst())
@@ -40,7 +40,7 @@ public record PageDto(@NotNull @Min(0) Integer number,
     @NonNull
     @Override
     public String toString() {
-        return "PageDto: [number = %d, size = %d, totalElements = %d, totalPages = %d]"
+        return "PageResponse: [number = %d, size = %d, totalElements = %d, totalPages = %d]"
                 .formatted(number, size, totalElements, totalPages);
     }
 
@@ -50,7 +50,7 @@ public record PageDto(@NotNull @Min(0) Integer number,
             return false;
         }
 
-        PageDto page = (PageDto) o;
+        PageResponse page = (PageResponse) o;
         return last == page.last &&
                 first == page.first &&
                 empty == page.empty &&

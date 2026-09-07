@@ -6,13 +6,13 @@ import lombok.NonNull;
 import java.util.Objects;
 
 @Builder
-public record LanguageWD(String code,
-                         String name) implements WriteDto {
+public record LanguageRequest(String code,
+                              String name) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        String str = "LanguageWD: [";
+        String str = "LanguageRequest: [";
 
         if (code == null && name == null) {
             str += "empty";
@@ -35,7 +35,7 @@ public record LanguageWD(String code,
             return false;
         }
 
-        LanguageWD language = (LanguageWD) o;
+        LanguageRequest language = (LanguageRequest) o;
         return Objects.equals(code, language.code) &&
                 Objects.equals(name, language.name);
     }

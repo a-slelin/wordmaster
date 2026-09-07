@@ -9,14 +9,14 @@ import lombok.NonNull;
 import java.util.Objects;
 
 @Builder
-public record LanguageRD(@NotNull @Min(1) Long id,
-                         @NotBlank String code,
-                         @NotBlank String name) implements ReadDto {
+public record LanguageResponse(@NotNull @Min(1) Long id,
+                               @NotBlank String code,
+                               @NotBlank String name) implements ResponseDto {
 
     @NonNull
     @Override
     public String toString() {
-        return "LanguageRD: [id = %d, code = %s, name = %s]"
+        return "LanguageResponse: [id = %d, code = %s, name = %s]"
                 .formatted(id, code, name);
     }
 
@@ -26,7 +26,7 @@ public record LanguageRD(@NotNull @Min(1) Long id,
             return false;
         }
 
-        LanguageRD language = (LanguageRD) o;
+        LanguageResponse language = (LanguageResponse) o;
         return Objects.equals(id, language.id) &&
                 Objects.equals(code, language.code) &&
                 Objects.equals(name, language.name);
