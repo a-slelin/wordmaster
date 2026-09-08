@@ -17,7 +17,7 @@ CREATE TABLE card
     position         BIGINT       NOT NULL,
     created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_card_to_deck FOREIGN KEY (deck_id) REFERENCES deck (id)
+    CONSTRAINT fk_card_to_deck FOREIGN KEY (deck_id) REFERENCES deck (id) ON DELETE CASCADE
 );
 
 --rollback DROP TABLE IF EXISTS card CASCADE
