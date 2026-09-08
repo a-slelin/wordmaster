@@ -42,9 +42,11 @@ public class User extends Audit {
     private String passwordHash;
 
     @Email
+    @NotNull
     @Size(min = 5, max = 50)
     @Column(length = 50,
-            unique = true)
+            unique = true,
+            nullable = false)
     private String email;
 
     @NotNull
