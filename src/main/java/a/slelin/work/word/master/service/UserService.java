@@ -8,27 +8,43 @@ import a.slelin.work.word.master.dto.user.UserPublicResponse;
 import a.slelin.work.word.master.dto.user.UserRequest;
 import a.slelin.work.word.master.dto.user.UserResponse;
 import a.slelin.work.word.master.entity.User;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
 public interface UserService {
 
-    UserResponse register(RegisterRequest request);
+    @Valid
+    @NotNull
+    UserResponse register(@NotNull @Valid RegisterRequest request);
 
-    UserResponse getById(UUID id);
+    @Valid
+    @NotNull
+    UserResponse getById(@NotNull UUID id);
 
-    UserPublicResponse getPublicById(UUID id);
+    @Valid
+    @NotNull
+    UserPublicResponse getPublicById(@NotNull UUID id);
 
-    SheetResponse<UserResponse> getAll(Pageable pageable);
+    @Valid
+    @NotNull
+    SheetResponse<UserResponse> getAll(@NotNull @Valid Pageable pageable);
 
-    UserResponse update(UUID id, UserRequest request);
+    @Valid
+    @NotNull
+    UserResponse update(@NotNull UUID id, @NotNull @Valid UserRequest request);
 
-    void changePassword(UUID id, ChangePasswordRequest request);
+    void changePassword(@NotNull UUID id, @NotNull @Valid ChangePasswordRequest request);
 
-    UserResponse updateRole(UUID id, AdminUpdateUserRoleRequest request);
+    @Valid
+    @NotNull
+    UserResponse updateRole(@NotNull UUID id, @NotNull @Valid AdminUpdateUserRoleRequest request);
 
-    void delete(UUID id);
+    void delete(@NotNull UUID id);
 
-    User getEntityById(UUID id);
+    @Valid
+    @NotNull
+    User getEntityById(@NotNull UUID id);
 }
