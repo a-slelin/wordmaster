@@ -1,32 +1,17 @@
 package a.slelin.work.word.master.dto.general;
 
 import a.slelin.work.word.master.dto.ResponseDto;
-import a.slelin.work.word.master.entity.BaseEntity;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.NonNull;
-import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
 @Builder
 public record SheetResponse<D extends ResponseDto>(@NotNull @Valid List<D> content,
                                                    @NotNull @Valid PageResponse page) implements ResponseDto {
-
-    @SuppressWarnings("unused")
-    public static <E extends BaseEntity, D extends ResponseDto> SheetResponse<D> of(Page<E> page, Function<E, D> mapper) {
-        if (page == null || mapper == null) {
-            throw new IllegalArgumentException("Page and mapper must not be null.");
-        }
-
-        List<D> content = page.stream().map(mapper).toList();
-        PageResponse pageDto = PageResponse.of(page);
-
-        return new SheetResponse<>(content, pageDto);
-    }
 
     @NonNull
     @Override
