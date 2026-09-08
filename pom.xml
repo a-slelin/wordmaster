@@ -60,6 +60,7 @@
 
         <!--Specific Libraries-->
         <version.lombok>1.18.48</version.lombok>
+        <versin.lombok.mapstruct.binding>0.2.0</versin.lombok.mapstruct.binding>
         <version.logback>1.6.3</version.logback>
         <version.mapstruct>1.6.3</version.mapstruct>
         <version.postgresql>42.7.13</version.postgresql>
@@ -321,6 +322,11 @@
                                 <groupId>org.projectlombok</groupId>
                                 <artifactId>lombok</artifactId>
                                 <version>${version.lombok}</version>
+                            </path>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok-mapstruct-binding</artifactId>
+                                <version>${versin.lombok.mapstruct.binding}</version>
                             </path>
                             <path>
                                 <groupId>org.mapstruct</groupId>
