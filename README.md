@@ -5,7 +5,7 @@
 > Учи слова, создавай собственные колоды, делись ими с другими и прокачивай словарный запас с помощью флэш-карт и
 > статистики прогресса.
 
-![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)
+![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-brightgreen?logo=springboot)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-latest-blue?logo=postgresql)
 ![Maven](https://img.shields.io/badge/Maven-build-red?logo=apachemaven)
@@ -275,8 +275,8 @@ wordmaster/
 ### Этап 1 — Фундамент
 
 - [x] Подробно описать проект (этот README ✅)
-- [x] Спроектировать модель данных для БД (ER-диаграмма)
-- [x] Написать слой data (Entity + DTO)
+- [ ] Спроектировать модель данных для БД (ER-диаграмма)
+- [ ] Написать слой data (Entity + DTO)
 
 ### Этап 2 — Логика
 
@@ -310,3 +310,19 @@ wordmaster/
 - Лидерборд самых популярных публичных колод.
 - Мобильная версия / PWA.
 - Озвучка слов (TTS) при тренировке.
+
+---
+
+## 🤝 Участие в разработке
+
+Приветствуются PR и issues! Перед отправкой:
+
+1. Форкните репозиторий и создайте ветку: `git checkout -b feature/amazing-feature`
+2. Внесите изменения и убедитесь, что проект собирается: `./mvnw clean verify`
+3. Создайте Pull Request с описанием изменений
+
+---
+
+## 📄 Лицензия
+
+Распространяется под лицензией MIT. См. файл `LICENSE` для подробностей.
