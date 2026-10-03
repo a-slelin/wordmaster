@@ -2,12 +2,12 @@
 #
 #   docker compose up -d          ->  http://localhost
 #
-# Images are taken from Docker Hub and are pulled on every start, so after a new version
-# is published (merge into main) a restart is enough: docker compose up -d
+# Images are taken from Docker Hub (published by CI on every push to dev / main).
+# If they are not there yet, compose builds them from the sources automatically.
+#   docker compose up -d --build                  - rebuild from the local sources
+#   docker compose pull && docker compose up -d   - update to the latest published version
 #
 # Settings can be overridden in a .env file next to this one (see .env.example).
-# Build from source instead of Docker Hub:
-#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 name: wordmaster
 
 services:
@@ -28,7 +28,8 @@ services:
 
   backend:
     image: ${DOCKERHUB_NAMESPACE:-aslelin}/wordmaster-backend:${WORDMASTER_VERSION:-latest}
-    pull_policy: always
+    build: .
+    pull_policy: ${PULL_POLICY:-missing}
     restart: unless-stopped
     depends_on:
       db:
@@ -50,7 +51,8 @@ services:
 
   frontend:
     image: ${DOCKERHUB_NAMESPACE:-aslelin}/wordmaster-frontend:${WORDMASTER_VERSION:-latest}
-    pull_policy: always
+    build: ./frontend
+    pull_policy: ${PULL_POLICY:-missing}
     restart: unless-stopped
     depends_on:
       backend:

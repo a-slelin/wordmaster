@@ -158,17 +158,21 @@ docker compose up -d
 
 Откройте **http://localhost** — вход администратора: **admin / admin12345**. Swagger: http://localhost/swagger-ui.html
 
-Образы берутся из Docker Hub и проверяются на обновление при каждом запуске, поэтому после выхода новой версии
-достаточно снова выполнить `docker compose up -d`. Данные хранятся в томе `db-data` и переживают обновления.
-Порт, пароли, секрет JWT и версию образов можно переопределить в `.env` (шаблон — [`.env.example`](.env.example)).
+Если образов ещё нет в Docker Hub (или он недоступен), compose сам соберёт их из исходников.
+Принудительно пересобрать из исходников: `docker compose up -d --build`.
 
-> ⚠️ Для сервера, доступного из интернета, обязательно задайте свои `JWT_SECRET`, `ADMIN_PASSWORD` и `DB_USER_PASSWORD`.
-
-Собрать образы из исходников вместо Docker Hub:
+Обновиться до свежей версии из Docker Hub:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+docker compose pull
+docker compose up -d
 ```
+
+Или задайте `PULL_POLICY=always` в `.env` — тогда свежие образы скачиваются при каждом `docker compose up`.
+Данные хранятся в томе `db-data` и переживают обновления. Порт, пароли, секрет JWT и версию образов можно
+переопределить в `.env` (шаблон — [`.env.example`](.env.example)).
+
+> ⚠️ Для сервера, доступного из интернета, обязательно задайте свои `JWT_SECRET`, `ADMIN_PASSWORD` и `DB_USER_PASSWORD`.
 
 ### Вариант 2. Локальная разработка
 
@@ -194,7 +198,8 @@ npm run dev
 Образы `wordmaster-backend` и `wordmaster-frontend` собирает GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)):
 
 - в pull request — только сборка и тесты, ничего не публикуется;
-- после **merge в `main`** — образы (amd64 + arm64) публикуются в Docker Hub с тегами `latest` и `sha-<коммит>`;
+- на **каждый push в `dev` или `main`** (после зелёных тестов) — образы (amd64 + arm64) публикуются в Docker Hub
+  с тегами `latest`, `<ветка>` и `sha-<коммит>`;
 - тег `v1.2.3` — дополнительно версия `1.2.3`.
 
 Однократная настройка (Settings → Secrets and variables → Actions):
@@ -426,8 +431,7 @@ wordmaster/
 ├── src/test/            # Unit- и интеграционные тесты
 ├── frontend/            # Vue 3 + TypeScript SPA (src/views, components, stores, api, i18n, styles)
 ├── Dockerfile           # Образ бэкенда
-├── docker-compose.yml   # Всё приложение одной командой (образы из Docker Hub)
-├── docker-compose.build.yml  # Сборка образов из исходников
+├── docker-compose.yml   # Всё приложение одной командой (образы из Docker Hub или сборка)
 ├── docker-compose.dev.yml    # Только PostgreSQL для разработки
 └── .github/workflows/   # CI
 ```
