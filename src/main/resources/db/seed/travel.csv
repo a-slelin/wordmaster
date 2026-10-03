@@ -1,0 +1,51 @@
+deck_id,word,translation,transcription,example_sentence,position
+00000000-0000-0000-0000-000000000106,passport,паспорт,[ˈpɑːspɔːt],Don't forget your passport.,1
+00000000-0000-0000-0000-000000000106,ticket,билет,[ˈtɪkɪt],I bought a return ticket.,2
+00000000-0000-0000-0000-000000000106,luggage,багаж,[ˈlʌɡɪdʒ],My luggage is lost.,3
+00000000-0000-0000-0000-000000000106,suitcase,чемодан,[ˈsuːtkeɪs],My suitcase is too heavy.,4
+00000000-0000-0000-0000-000000000106,boarding pass,посадочный талон,[ˈbɔːdɪŋ pɑːs],Show your boarding pass at the gate.,5
+00000000-0000-0000-0000-000000000106,departure,"отправление, вылет",[dɪˈpɑːtʃə],Departure is at 9 a.m.,6
+00000000-0000-0000-0000-000000000106,arrival,прибытие,[əˈraɪvl],What's the arrival time?,7
+00000000-0000-0000-0000-000000000106,delay,задержка,[dɪˈleɪ],There's a two-hour delay.,8
+00000000-0000-0000-0000-000000000106,gate,выход на посадку,[ɡeɪt],Go to gate 12.,9
+00000000-0000-0000-0000-000000000106,customs,таможня,[ˈkʌstəmz],We went through customs quickly.,10
+00000000-0000-0000-0000-000000000106,flight,"рейс, полёт",[flaɪt],The flight was smooth.,11
+00000000-0000-0000-0000-000000000106,window seat,место у окна,[ˈwɪndəʊ siːt],Can I have a window seat?,12
+00000000-0000-0000-0000-000000000106,aisle seat,место у прохода,[aɪl siːt],I prefer an aisle seat.,13
+00000000-0000-0000-0000-000000000106,reservation,бронь,[ˌrezəˈveɪʃn],I have a reservation under Smith.,14
+00000000-0000-0000-0000-000000000106,to book,бронировать,[bʊk],I booked a room for two nights.,15
+00000000-0000-0000-0000-000000000106,single room,одноместный номер,[ˈsɪŋɡl ruːm],"I'd like a single room, please.",16
+00000000-0000-0000-0000-000000000106,double room,двухместный номер,[ˈdʌbl ruːm],Do you have a double room?,17
+00000000-0000-0000-0000-000000000106,receptionist,администратор,[rɪˈsepʃənɪst],Ask the receptionist for a map.,18
+00000000-0000-0000-0000-000000000106,key card,ключ-карта,[kiː kɑːd],My key card doesn't work.,19
+00000000-0000-0000-0000-000000000106,breakfast included,завтрак включён,[ˈbrekfəst ɪnˈkluːdɪd],Is breakfast included?,20
+00000000-0000-0000-0000-000000000106,sightseeing,осмотр достопримечательностей,[ˈsaɪtsiːɪŋ],We went sightseeing all day.,21
+00000000-0000-0000-0000-000000000106,landmark,достопримечательность,[ˈlændmɑːk],The Eiffel Tower is a famous landmark.,22
+00000000-0000-0000-0000-000000000106,guided tour,экскурсия с гидом,[ˈɡaɪdɪd tʊə],We took a guided tour of the castle.,23
+00000000-0000-0000-0000-000000000106,map,карта,[mæp],Can you show me on the map?,24
+00000000-0000-0000-0000-000000000106,directions,"указания, как пройти",[dəˈrekʃnz],Can you give me directions to the station?,25
+00000000-0000-0000-0000-000000000106,straight ahead,прямо,[streɪt əˈhed],Go straight ahead.,26
+00000000-0000-0000-0000-000000000106,turn left,поверните налево,[tɜːn left],Turn left at the corner.,27
+00000000-0000-0000-0000-000000000106,turn right,поверните направо,[tɜːn raɪt],Turn right after the bank.,28
+00000000-0000-0000-0000-000000000106,nearby,поблизости,[ˌnɪəˈbaɪ],Is there a pharmacy nearby?,29
+00000000-0000-0000-0000-000000000106,subway,метро (амер.),[ˈsʌbweɪ],Let's take the subway.,30
+00000000-0000-0000-0000-000000000106,bus stop,автобусная остановка,[bʌs stɒp],Where is the bus stop?,31
+00000000-0000-0000-0000-000000000106,platform,платформа,[ˈplætfɔːm],The train leaves from platform 3.,32
+00000000-0000-0000-0000-000000000106,round trip,туда и обратно,[raʊnd trɪp],"A round-trip ticket, please.",33
+00000000-0000-0000-0000-000000000106,one-way,в одну сторону,[ˌwʌnˈweɪ],One-way ticket to Paris.,34
+00000000-0000-0000-0000-000000000106,to rent a car,арендовать машину,[rent ə kɑː],We rented a car for a week.,35
+00000000-0000-0000-0000-000000000106,currency exchange,обмен валюты,[ˈkʌrənsi ɪksˈtʃeɪndʒ],Where is the currency exchange?,36
+00000000-0000-0000-0000-000000000106,cash,наличные,[kæʃ],Do you accept cash?,37
+00000000-0000-0000-0000-000000000106,receipt,чек,[rɪˈsiːt],Can I have a receipt?,38
+00000000-0000-0000-0000-000000000106,tip,чаевые,[tɪp],Is the tip included?,39
+00000000-0000-0000-0000-000000000106,menu,меню,[ˈmenjuː],Can I see the menu?,40
+00000000-0000-0000-0000-000000000106,"the bill, please","счёт, пожалуйста",[ðə bɪl pliːz],"Excuse me, the bill, please.",41
+00000000-0000-0000-0000-000000000106,souvenir,сувенир,[ˌsuːvəˈnɪə],I bought a souvenir for my mom.,42
+00000000-0000-0000-0000-000000000106,travel insurance,страховка для путешествий,[ˈtrævl ɪnˈʃʊərəns],Don't travel without travel insurance.,43
+00000000-0000-0000-0000-000000000106,jet lag,"смена часовых поясов, джетлаг",[dʒet læɡ],I have terrible jet lag.,44
+00000000-0000-0000-0000-000000000106,sunscreen,солнцезащитный крем,[ˈsʌnskriːn],Put on some sunscreen.,45
+00000000-0000-0000-0000-000000000106,lost and found,бюро находок,[lɒst ənd faʊnd],Check the lost and found.,46
+00000000-0000-0000-0000-000000000106,emergency,экстренная ситуация,[ɪˈmɜːdʒənsi],"In an emergency, call 112.",47
+00000000-0000-0000-0000-000000000106,pharmacy,аптека,[ˈfɑːməsi],The pharmacy is open 24 hours.,48
+00000000-0000-0000-0000-000000000106,How much is it?,Сколько это стоит?,[haʊ mʌtʃ ɪz ɪt],How much is it? — Ten euros.,49
+00000000-0000-0000-0000-000000000106,Could you help me?,Не могли бы вы мне помочь?,[kʊd juː help miː],"Excuse me, could you help me?",50
