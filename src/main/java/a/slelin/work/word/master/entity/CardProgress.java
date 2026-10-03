@@ -29,7 +29,7 @@ public class CardProgress implements BaseEntity {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER,
+    @ManyToOne(fetch = FetchType.LAZY,
             optional = false)
     @JoinColumn(name = "user_id",
             nullable = false)

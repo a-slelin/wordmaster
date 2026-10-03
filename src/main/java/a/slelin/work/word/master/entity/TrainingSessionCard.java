@@ -1,13 +1,16 @@
 package a.slelin.work.word.master.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * One card of a training session plan. Cards answered with {@link Grade#AGAIN}
+ * are moved to the end of the queue and asked again in the same session.
+ */
 @Getter
 @Setter
 @Builder
@@ -15,13 +18,13 @@ import java.util.UUID;
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = TrainingAnswer.TABLE_NAME)
-@Entity(name = TrainingAnswer.ENTITY_NAME)
-public class TrainingAnswer implements BaseEntity {
+@Table(name = TrainingSessionCard.TABLE_NAME)
+@Entity(name = TrainingSessionCard.ENTITY_NAME)
+public class TrainingSessionCard implements BaseEntity {
 
-    public static final String ENTITY_NAME = "TrainingAnswer";
+    public static final String ENTITY_NAME = "TrainingSessionCard";
 
-    public static final String TABLE_NAME = "training_answer";
+    public static final String TABLE_NAME = "training_session_card";
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -37,28 +40,23 @@ public class TrainingAnswer implements BaseEntity {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER,
+    @ManyToOne(fetch = FetchType.LAZY,
             optional = false)
     @JoinColumn(name = "card_id",
             nullable = false)
     private Card card;
 
+    @Min(1)
     @NotNull
-    @Column(nullable = false, length = 15)
-    @Convert(converter = GradeConverter.class)
-    private Grade grade;
+    @Column(nullable = false)
+    private Long position;
 
     @NotNull
-    @Column(nullable = false,
-            name = "is_correct")
-    private Boolean isCorrect;
+    @Column(nullable = false)
+    private Boolean done;
 
-    @Size(max = 255)
-    @Column(name = "user_answer")
-    private String userAnswer;
-
+    @Min(0)
     @NotNull
-    @Column(nullable = false,
-            name = "answered_at")
-    private LocalDateTime answeredAt;
+    @Column(nullable = false)
+    private Integer attempts;
 }

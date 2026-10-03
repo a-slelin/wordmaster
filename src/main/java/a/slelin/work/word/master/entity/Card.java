@@ -32,7 +32,7 @@ public class Card extends Audit {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER,
+    @ManyToOne(fetch = FetchType.LAZY,
             optional = false)
     @JoinColumn(name = "deck_id",
             nullable = false)
@@ -54,10 +54,12 @@ public class Card extends Audit {
     private String exampleSentence;
 
     @URL
+    @Size(max = 1024)
     @Column(name = "image_url")
     private String imageUrl;
 
     @URL
+    @Size(max = 1024)
     @Column(name = "audio_url")
     private String audioUrl;
 
