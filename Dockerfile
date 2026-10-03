@@ -1,7 +1,5 @@
 # ===== Build =====
-# Build stage runs on the builder's native platform: the jar is platform independent,
-# so multi-arch images (amd64 + arm64) do not need slow emulation.
-FROM --platform=$BUILDPLATFORM maven:3-eclipse-temurin-25 AS build
+FROM maven:3-eclipse-temurin-25 AS build
 WORKDIR /app
 COPY pom.xml .
 RUN mvn -q -B dependency:go-offline

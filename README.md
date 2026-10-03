@@ -141,8 +141,7 @@
 ### Инфраструктура
 
 - **Docker / docker-compose**: PostgreSQL + backend + frontend (nginx раздаёт SPA и проксирует `/api`), запуск одной командой.
-- **Docker Hub**: образы публикуются автоматически после merge в `main`.
-- **GitHub Actions**: сборка и тесты бэкенда, тесты и сборка фронтенда, сборка и публикация Docker-образов.
+- **GitHub Actions**: сборка и тесты бэкенда, тесты и сборка фронтенда, проверка сборки Docker-образов.
 
 ---
 
@@ -150,7 +149,7 @@
 
 ### Вариант 1. Одной командой (Docker)
 
-Нужен только Docker. Скачайте [`docker-compose.yml`](docker-compose.yml) (или клонируйте репозиторий) и выполните:
+Нужен только Docker. Клонируйте репозиторий и выполните:
 
 ```bash
 docker compose up -d
@@ -158,19 +157,11 @@ docker compose up -d
 
 Откройте **http://localhost** — вход администратора: **admin / admin12345**. Swagger: http://localhost/swagger-ui.html
 
-Если образов ещё нет в Docker Hub (или он недоступен), compose сам соберёт их из исходников.
-Принудительно пересобрать из исходников: `docker compose up -d --build`.
-
-Обновиться до свежей версии из Docker Hub:
-
-```bash
-docker compose pull
-docker compose up -d
-```
-
-Или задайте `PULL_POLICY=always` в `.env` — тогда свежие образы скачиваются при каждом `docker compose up`.
-Данные хранятся в томе `db-data` и переживают обновления. Порт, пароли, секрет JWT и версию образов можно
-переопределить в `.env` (шаблон — [`.env.example`](.env.example)).
+Образы `wordmaster-backend` и `wordmaster-frontend` собираются локально из исходников при каждом запуске
+(неизменённые слои берутся из кэша), поэтому запущенное приложение всегда соответствует коду.
+Первая сборка занимает несколько минут — скачиваются зависимости Maven и npm.
+Данные хранятся в томе `db-data` и переживают пересборку. Порт, пароли и секрет JWT можно переопределить
+в `.env` (шаблон — [`.env.example`](.env.example)).
 
 > ⚠️ Для сервера, доступного из интернета, обязательно задайте свои `JWT_SECRET`, `ADMIN_PASSWORD` и `DB_USER_PASSWORD`.
 
@@ -193,23 +184,14 @@ npm run dev
 
 В профиле `dev` автоматически создаётся администратор **admin / admin12345**.
 
-### Публикация новых версий
+### Публикация образов в Docker Hub
 
-Образы `wordmaster-backend` и `wordmaster-frontend` собирает GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)):
-
-- в pull request — только сборка и тесты, ничего не публикуется;
-- на **каждый push в `dev` или `main`** (после зелёных тестов) — образы (amd64 + arm64) публикуются в Docker Hub
-  с тегами `latest`, `<ветка>` и `sha-<коммит>`;
-- тег `v1.2.3` — дополнительно версия `1.2.3`.
-
-Однократная настройка (Settings → Secrets and variables → Actions):
-
-| Где | Имя | Значение |
-|-----|-----|----------|
-| Variables | `DOCKERHUB_USERNAME` | логин Docker Hub |
-| Secrets | `DOCKERHUB_TOKEN` | Access Token Docker Hub (Account settings → Personal access tokens, права *Read & Write*) |
-
-Откатиться на любую прошлую версию: `WORDMASTER_VERSION=sha-1a2b3c4 docker compose up -d`.
+```bash
+# в .env: DOCKERHUB_NAMESPACE=<ваш логин Docker Hub>
+docker compose build
+docker login
+docker compose push
+```
 
 ### Переменные окружения
 
@@ -223,7 +205,7 @@ npm run dev
 | `APP_TIME_ZONE`         | `Europe/Moscow`              | Часовой пояс, по которому считаются дни и серии  |
 | `CORS_ALLOWED_ORIGINS`  | `http://localhost:5173`      | Разрешённые origin'ы для фронтенда               |
 | `APP_PORT`              | `80`                         | Публичный порт в docker-compose                  |
-| `DOCKERHUB_NAMESPACE` / `WORDMASTER_VERSION` | `aslelin` / `latest` | Откуда брать образы и какую версию      |
+| `DOCKERHUB_NAMESPACE` / `WORDMASTER_VERSION` | `wordmaster` / `latest` | Имя и тег собираемых образов (для `docker compose push`) |
 
 ---
 
@@ -431,7 +413,7 @@ wordmaster/
 ├── src/test/            # Unit- и интеграционные тесты
 ├── frontend/            # Vue 3 + TypeScript SPA (src/views, components, stores, api, i18n, styles)
 ├── Dockerfile           # Образ бэкенда
-├── docker-compose.yml   # Всё приложение одной командой (образы из Docker Hub или сборка)
+├── docker-compose.yml   # Всё приложение одной командой (локальная сборка образов)
 ├── docker-compose.dev.yml    # Только PostgreSQL для разработки
 └── .github/workflows/   # CI
 ```

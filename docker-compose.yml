@@ -2,10 +2,11 @@
 #
 #   docker compose up -d          ->  http://localhost
 #
-# Images are taken from Docker Hub (published by CI on every push to dev / main).
-# If they are not there yet, compose builds them from the sources automatically.
-#   docker compose up -d --build                  - rebuild from the local sources
-#   docker compose pull && docker compose up -d   - update to the latest published version
+# Images are built locally from the sources on every start (unchanged layers come from the cache),
+# so the running application always matches the code. To publish them to Docker Hub:
+#   docker login
+#   docker compose push
+# (set DOCKERHUB_NAMESPACE in .env to your Docker Hub login first)
 #
 # Settings can be overridden in a .env file next to this one (see .env.example).
 name: wordmaster
@@ -27,9 +28,9 @@ services:
       retries: 10
 
   backend:
-    image: ${DOCKERHUB_NAMESPACE:-aslelin}/wordmaster-backend:${WORDMASTER_VERSION:-latest}
+    image: ${DOCKERHUB_NAMESPACE:-wordmaster}/wordmaster-backend:${WORDMASTER_VERSION:-latest}
     build: .
-    pull_policy: ${PULL_POLICY:-missing}
+    pull_policy: build
     restart: unless-stopped
     depends_on:
       db:
@@ -50,9 +51,9 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
 
   frontend:
-    image: ${DOCKERHUB_NAMESPACE:-aslelin}/wordmaster-frontend:${WORDMASTER_VERSION:-latest}
+    image: ${DOCKERHUB_NAMESPACE:-wordmaster}/wordmaster-frontend:${WORDMASTER_VERSION:-latest}
     build: ./frontend
-    pull_policy: ${PULL_POLICY:-missing}
+    pull_policy: build
     restart: unless-stopped
     depends_on:
       backend:
