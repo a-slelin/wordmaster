@@ -36,7 +36,7 @@ public record DeckResponse(@NotBlank String id,
                            @NotNull @Min(0) Long likesCount,
                            @NotNull @Min(0) Long copiesCount,
                            @NotNull @Min(0) Long cardsCount,
-                           @NotNull @Valid List<TagResponse> tags,
+                           @NotNull List<@Valid TagResponse> tags,
                            String sourceDeckId,
                            @Valid DeckProgressResponse progress,
                            @JsonSerialize(using = LocalDateTimeSerializer.class)

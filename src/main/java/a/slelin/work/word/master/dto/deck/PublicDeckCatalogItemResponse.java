@@ -34,7 +34,7 @@ public record PublicDeckCatalogItemResponse(@NotBlank String id,
                                             @NotNull @Min(0) Long cardsCount,
                                             @NotNull @Min(0) Long likesCount,
                                             @NotNull @Min(0) Long copiesCount,
-                                            @NotNull @Valid List<TagResponse> tags,
+                                            @NotNull List<@Valid TagResponse> tags,
                                             @JsonSerialize(using = LocalDateTimeSerializer.class)
                                             @JsonDeserialize(using = LocalDateTimeDeserializer.class)
                                             @NotNull LocalDateTime createdAt) implements ResponseDto {

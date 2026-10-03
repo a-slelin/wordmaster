@@ -29,7 +29,7 @@ public record TrainingSessionFinishResponse(@NotBlank String sessionId,
                                             @NotNull Boolean streakExtended,
                                             @NotNull @Min(0) Integer dailyGoal,
                                             @NotNull @Min(0) Integer todayReviewed,
-                                            @NotNull @Valid List<AchievementResponse> newAchievements) implements ResponseDto {
+                                            @NotNull List<@Valid AchievementResponse> newAchievements) implements ResponseDto {
 
     @NonNull
     @Override

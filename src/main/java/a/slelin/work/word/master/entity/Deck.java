@@ -116,9 +116,7 @@ public class Deck extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "deck",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<DeckLikes> deckLikes;
 
@@ -126,9 +124,7 @@ public class Deck extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "deck",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<TrainingSession> trainingSessions;
 }

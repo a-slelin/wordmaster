@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record SheetResponse<D extends ResponseDto>(@NotNull @Valid List<D> content,
+public record SheetResponse<D extends ResponseDto>(@NotNull List<@Valid D> content,
                                                    @NotNull @Valid PageResponse page) implements ResponseDto {
 
     @NonNull

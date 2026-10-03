@@ -99,9 +99,7 @@ public class TrainingSession implements BaseEntity {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "session",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<TrainingAnswer> trainingAnswers;
 }

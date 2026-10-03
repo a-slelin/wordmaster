@@ -34,7 +34,7 @@ public record DeckSummaryResponse(@NotBlank String id,
                                   @NotNull @Min(0) Long dueCount,
                                   @NotNull @Min(0) Long knownCount,
                                   @NotNull @Min(0) @Max(100) Integer percentLearned,
-                                  @NotNull @Valid List<TagResponse> tags,
+                                  @NotNull List<@Valid TagResponse> tags,
                                   String sourceDeckId,
                                   @JsonSerialize(using = LocalDateTimeSerializer.class)
                                   @JsonDeserialize(using = LocalDateTimeDeserializer.class)

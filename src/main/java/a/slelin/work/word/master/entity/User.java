@@ -58,9 +58,7 @@ public class User extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "user",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<DeckLikes> deckLikes;
 
@@ -68,9 +66,7 @@ public class User extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "user",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<CardProgress> cardProgresses;
 
@@ -78,9 +74,7 @@ public class User extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "user",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<TrainingSession> trainingSessions;
 }

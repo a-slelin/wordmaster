@@ -72,9 +72,7 @@ public class Card extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "card",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<CardProgress> cardProgresses;
 
@@ -82,9 +80,7 @@ public class Card extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "card",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<TrainingAnswer> trainingAnswers;
 }
