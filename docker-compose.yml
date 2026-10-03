@@ -1,5 +1,13 @@
-# Full application: docker compose up -d --build   ->  http://localhost (APP_PORT)
-# Only the database for local development: docker compose up -d db
+# WordMaster: the whole application with one command
+#
+#   docker compose up -d          ->  http://localhost
+#
+# Images are taken from Docker Hub and are pulled on every start, so after a new version
+# is published (merge into main) a restart is enough: docker compose up -d
+#
+# Settings can be overridden in a .env file next to this one (see .env.example).
+# Build from source instead of Docker Hub:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 name: wordmaster
 
 services:
@@ -10,8 +18,6 @@ services:
       POSTGRES_DB: ${DB_NAME:-WORDMASTER}
       POSTGRES_USER: ${DB_USER_NAME:-word_master_user}
       POSTGRES_PASSWORD: ${DB_USER_PASSWORD:-password}
-    ports:
-      - "${DB_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +27,8 @@ services:
       retries: 10
 
   backend:
-    build: .
+    image: ${DOCKERHUB_NAMESPACE:-aslelin}/wordmaster-backend:${WORDMASTER_VERSION:-latest}
+    pull_policy: always
     restart: unless-stopped
     depends_on:
       db:
@@ -33,15 +40,17 @@ services:
       DB_NAME: ${DB_NAME:-WORDMASTER}
       DB_USER_NAME: ${DB_USER_NAME:-word_master_user}
       DB_USER_PASSWORD: ${DB_USER_PASSWORD:-password}
-      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (at least 32 characters)}
-      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      # Change it in .env for any server reachable from the internet!
+      JWT_SECRET: ${JWT_SECRET:-local-docker-secret-please-change-me-0123456789}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@wordmaster.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin12345}
       APP_TIME_ZONE: ${APP_TIME_ZONE:-Europe/Moscow}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
 
   frontend:
-    build: ./frontend
+    image: ${DOCKERHUB_NAMESPACE:-aslelin}/wordmaster-frontend:${WORDMASTER_VERSION:-latest}
+    pull_policy: always
     restart: unless-stopped
     depends_on:
       backend:

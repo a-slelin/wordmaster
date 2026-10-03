@@ -140,31 +140,43 @@
 
 ### Инфраструктура
 
-- **Docker / docker-compose**: PostgreSQL + backend + frontend (nginx раздаёт SPA и проксирует `/api`).
-- **GitHub Actions**: сборка и тесты бэкенда, тесты и сборка фронтенда, сборка Docker-образов.
+- **Docker / docker-compose**: PostgreSQL + backend + frontend (nginx раздаёт SPA и проксирует `/api`), запуск одной командой.
+- **Docker Hub**: образы публикуются автоматически после merge в `main`.
+- **GitHub Actions**: сборка и тесты бэкенда, тесты и сборка фронтенда, сборка и публикация Docker-образов.
 
 ---
 
 ## 🚀 Быстрый старт
 
-### Вариант 1. Всё в Docker
+### Вариант 1. Одной командой (Docker)
+
+Нужен только Docker. Скачайте [`docker-compose.yml`](docker-compose.yml) (или клонируйте репозиторий) и выполните:
 
 ```bash
-git clone https://github.com/a-slelin/wordmaster.git
-cd wordmaster
-cp .env.example .env          # задайте JWT_SECRET (≥ 32 символов) и при желании ADMIN_*
-docker compose up -d --build
+docker compose up -d
 ```
 
-Откройте **http://localhost** (порт меняется переменной `APP_PORT`). Swagger: http://localhost/swagger-ui.html
+Откройте **http://localhost** — вход администратора: **admin / admin12345**. Swagger: http://localhost/swagger-ui.html
+
+Образы берутся из Docker Hub и проверяются на обновление при каждом запуске, поэтому после выхода новой версии
+достаточно снова выполнить `docker compose up -d`. Данные хранятся в томе `db-data` и переживают обновления.
+Порт, пароли, секрет JWT и версию образов можно переопределить в `.env` (шаблон — [`.env.example`](.env.example)).
+
+> ⚠️ Для сервера, доступного из интернета, обязательно задайте свои `JWT_SECRET`, `ADMIN_PASSWORD` и `DB_USER_PASSWORD`.
+
+Собрать образы из исходников вместо Docker Hub:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
 
 ### Вариант 2. Локальная разработка
 
-Нужны **JDK 25**, **Node.js 22+** и Docker (или свой PostgreSQL).
+Нужны **JDK 25**, **Node.js 22+** и PostgreSQL (свой или из Docker).
 
 ```bash
-# 1. База данных
-docker compose up -d db
+# 1. База данных (если нет своей; иначе создайте её скриптом extra/create_dev_db.sql)
+docker compose -f docker-compose.dev.yml up -d
 
 # 2. Бэкенд (профиль dev, http://localhost:8080)
 mvn spring-boot:run
@@ -176,7 +188,23 @@ npm run dev
 ```
 
 В профиле `dev` автоматически создаётся администратор **admin / admin12345**.
-Если PostgreSQL свой, а не из Docker, — создайте базу скриптом [`extra/create_dev_db.sql`](extra/create_dev_db.sql).
+
+### Публикация новых версий
+
+Образы `wordmaster-backend` и `wordmaster-frontend` собирает GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)):
+
+- в pull request — только сборка и тесты, ничего не публикуется;
+- после **merge в `main`** — образы (amd64 + arm64) публикуются в Docker Hub с тегами `latest` и `sha-<коммит>`;
+- тег `v1.2.3` — дополнительно версия `1.2.3`.
+
+Однократная настройка (Settings → Secrets and variables → Actions):
+
+| Где | Имя | Значение |
+|-----|-----|----------|
+| Variables | `DOCKERHUB_USERNAME` | логин Docker Hub |
+| Secrets | `DOCKERHUB_TOKEN` | Access Token Docker Hub (Account settings → Personal access tokens, права *Read & Write*) |
+
+Откатиться на любую прошлую версию: `WORDMASTER_VERSION=sha-1a2b3c4 docker compose up -d`.
 
 ### Переменные окружения
 
@@ -185,11 +213,12 @@ npm run dev
 | `DB_HOST` / `DB_PORT`   | `localhost` / `5432`         | Адрес PostgreSQL                                 |
 | `DB_NAME`               | `WORDMASTER`                 | Имя базы                                         |
 | `DB_USER_NAME` / `DB_USER_PASSWORD` | `word_master_user` / `password` | Учётные данные БД                      |
-| `JWT_SECRET`            | — (обязательно в `prod`)     | Секрет подписи токенов, минимум 32 символа       |
+| `JWT_SECRET`            | тестовый (смените на сервере) | Секрет подписи токенов, минимум 32 символа       |
 | `ADMIN_USERNAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | пусто | Администратор, создаваемый при старте     |
 | `APP_TIME_ZONE`         | `Europe/Moscow`              | Часовой пояс, по которому считаются дни и серии  |
 | `CORS_ALLOWED_ORIGINS`  | `http://localhost:5173`      | Разрешённые origin'ы для фронтенда               |
 | `APP_PORT`              | `80`                         | Публичный порт в docker-compose                  |
+| `DOCKERHUB_NAMESPACE` / `WORDMASTER_VERSION` | `aslelin` / `latest` | Откуда брать образы и какую версию      |
 
 ---
 
@@ -397,7 +426,9 @@ wordmaster/
 ├── src/test/            # Unit- и интеграционные тесты
 ├── frontend/            # Vue 3 + TypeScript SPA (src/views, components, stores, api, i18n, styles)
 ├── Dockerfile           # Образ бэкенда
-├── docker-compose.yml   # PostgreSQL + backend + frontend
+├── docker-compose.yml   # Всё приложение одной командой (образы из Docker Hub)
+├── docker-compose.build.yml  # Сборка образов из исходников
+├── docker-compose.dev.yml    # Только PostgreSQL для разработки
 └── .github/workflows/   # CI
 ```
 
