@@ -9,6 +9,7 @@ import a.slelin.work.word.master.dto.user.UserRequest;
 import a.slelin.work.word.master.dto.user.UserResponse;
 import a.slelin.work.word.master.entity.Role;
 import a.slelin.work.word.master.entity.User;
+import a.slelin.work.word.master.exception.BusinessFault;
 import a.slelin.work.word.master.exception.DuplicateResourceException;
 import a.slelin.work.word.master.exception.EntityNotFoundByIdException;
 import a.slelin.work.word.master.mapper.common.PageMapper;
@@ -16,11 +17,9 @@ import a.slelin.work.word.master.mapper.user.UserMapper;
 import a.slelin.work.word.master.repository.UserRepository;
 import a.slelin.work.word.master.service.UserService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,23 +33,26 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
+    /**
+     * Owner of the official starter decks (see Liquibase seed data).
+     */
+    public static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     private final UserRepository userRepository;
 
     private final UserMapper userMapper;
 
     private final PasswordEncoder passwordEncoder;
 
-    @Valid
-    @NotNull
     @Override
     @Transactional
-    public UserResponse register(@NotNull @Valid RegisterRequest request) {
+    public UserResponse register(RegisterRequest request) {
 
-        if (userRepository.existsByUsername(request.username())) {
+        if (userRepository.existsByUsernameIgnoreCase(request.username())) {
             throw new DuplicateResourceException("username", request.username());
         }
 
-        if (userRepository.existsByEmail(request.email())) {
+        if (userRepository.existsByEmailIgnoreCase(request.email())) {
             throw new DuplicateResourceException("email", request.email());
         }
 
@@ -62,42 +64,34 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(saved);
     }
 
-    @Valid
-    @NotNull
     @Override
-    public UserResponse getById(@NotNull UUID id) {
+    public UserResponse getById(UUID id) {
         return userMapper.toDto(getEntityById(id));
     }
 
-    @Valid
-    @NotNull
     @Override
-    public UserPublicResponse getPublicById(@NotNull UUID id) {
+    public UserPublicResponse getPublicById(UUID id) {
         return userMapper.toPublicDto(getEntityById(id));
     }
 
-    @Valid
-    @NotNull
     @Override
-    public SheetResponse<UserResponse> getAll(@NotNull @Valid Pageable pageable) {
+    public SheetResponse<UserResponse> getAll(Pageable pageable) {
         Page<User> page = userRepository.findAll(pageable);
         return PageMapper.toSheet(page, userMapper::toDto);
     }
 
-    @Valid
-    @NotNull
     @Override
     @Transactional
-    public UserResponse update(@NotNull UUID id, @NotNull @Valid UserRequest request) {
+    public UserResponse update(UUID id, UserRequest request) {
         User user = getEntityById(id);
 
         if (request.username() != null
-                && userRepository.existsByUsernameAndIdNot(request.username(), id)) {
+                && userRepository.existsByUsernameIgnoreCaseAndIdNot(request.username(), id)) {
             throw new DuplicateResourceException("username", request.username());
         }
 
         if (request.email() != null
-                && userRepository.existsByEmailAndIdNot(request.email(), id)) {
+                && userRepository.existsByEmailIgnoreCaseAndIdNot(request.email(), id)) {
             throw new DuplicateResourceException("email", request.email());
         }
 
@@ -108,31 +102,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void changePassword(@NotNull UUID id, @NotNull @Valid ChangePasswordRequest request) {
+    public void changePassword(UUID id, ChangePasswordRequest request) {
         User user = getEntityById(id);
 
         if (!passwordEncoder.matches(request.oldPassword(), user.getPasswordHash())) {
-            throw new BadCredentialsException("Invalid password.");
+            throw new BusinessFault("Current password is incorrect.");
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
     }
 
-    @Valid
-    @NotNull
     @Override
     @Transactional
-    public UserResponse updateRole(@NotNull UUID id, @NotNull @Valid AdminUpdateUserRoleRequest request) {
+    public UserResponse updateRole(UUID id, AdminUpdateUserRoleRequest request) {
         User user = getEntityById(id);
-        Role newRole = Role.of(request.role());
+        Role newRole = parseRole(request.role());
 
         boolean demotingLastAdmin = user.getRole() == Role.ADMIN
                 && newRole != Role.ADMIN
                 && userRepository.countByRole(Role.ADMIN) <= 1;
 
         if (demotingLastAdmin) {
-            throw new IllegalStateException("Cannot remove the last remaining admin.");
+            throw new BusinessFault("Cannot remove the last remaining admin.");
         }
 
         userMapper.applyRole(user, request);
@@ -142,18 +134,29 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void delete(UUID id) {
-        if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundByIdException(User.class, id);
+        if (SYSTEM_USER_ID.equals(id)) {
+            throw new BusinessFault("System user can not be deleted.");
         }
 
-        userRepository.deleteById(id);
+        User user = getEntityById(id);
+        if (user.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
+            throw new BusinessFault("Cannot delete the last remaining admin.");
+        }
+
+        userRepository.deleteUser(user.getId());
     }
 
-    @Valid
-    @NotNull
     @Override
-    public User getEntityById(@NotNull UUID id) {
+    public User getEntityById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundByIdException(User.class, id));
+    }
+
+    private static Role parseRole(String role) {
+        try {
+            return Role.of(role);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessFault("Unknown role '%s'.".formatted(role));
+        }
     }
 }
