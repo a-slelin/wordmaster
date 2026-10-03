@@ -6,24 +6,24 @@ import { parseDate } from '@/utils/format'
 
 const props = defineProps<{ days: ForecastDay[] }>()
 const { t, locale } = useI18n()
+const todayLabel = computed(() => t('stats.today'))
 
 const max = computed(() => Math.max(1, ...props.days.map((d) => d.dueCount)))
 
-function label(day: ForecastDay, index: number) {
-  if (index === 0) return t('stats.today')
-  if (index === 1) return t('stats.tomorrow')
+function label(day: ForecastDay) {
   return parseDate(day.date)?.toLocaleDateString(locale.value, { weekday: 'short' }) ?? ''
 }
 </script>
 
 <template>
   <div class="chart">
-    <div v-for="(day, i) in days" :key="day.date" class="bar-col" :title="`${day.date}: ${day.dueCount}`">
+    <div v-for="(day, i) in days" :key="day.date" class="bar-col"
+         :title="`${i === 0 ? todayLabel : day.date}: ${day.dueCount}`">
       <span class="value tiny bold">{{ day.dueCount || '' }}</span>
       <div class="bar-track">
         <div class="bar" :class="{ today: i === 0 }" :style="{ height: `${(day.dueCount / max) * 100}%` }" />
       </div>
-      <span class="label tiny">{{ label(day, i) }}</span>
+      <span class="label tiny" :class="{ today: i === 0 }">{{ label(day) }}</span>
     </div>
   </div>
 </template>
@@ -71,6 +71,10 @@ function label(day: ForecastDay, index: number) {
 .value {
   min-height: 1em;
   color: var(--text-muted);
+}
+
+.label.today {
+  color: var(--warning);
 }
 
 .label {
