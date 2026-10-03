@@ -6,6 +6,8 @@ import a.slelin.work.word.master.entity.Language;
 import a.slelin.work.word.master.mapper.common.MapstructConfig;
 import org.mapstruct.*;
 
+import java.util.List;
+
 @SuppressWarnings("unused")
 @Mapper(config = MapstructConfig.class)
 public interface LanguageMapper {
@@ -17,9 +19,11 @@ public interface LanguageMapper {
 
     LanguageResponse toDto(Language language);
 
+    List<LanguageResponse> toDtoList(List<Language> languages);
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "decksBySourceLanguage", ignore = true)
     @Mapping(target = "decksByTargetLanguage", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    Language patch(@MappingTarget Language language, LanguageRequest request);
+    void patch(@MappingTarget Language language, LanguageRequest request);
 }

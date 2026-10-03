@@ -1,7 +1,7 @@
 package a.slelin.work.word.master.dto.deck;
 
-import a.slelin.work.word.master.dto.language.LanguageResponse;
 import a.slelin.work.word.master.dto.ResponseDto;
+import a.slelin.work.word.master.dto.language.LanguageResponse;
 import a.slelin.work.word.master.dto.tag.TagResponse;
 import a.slelin.work.word.master.dto.user.UserPublicResponse;
 import a.slelin.work.word.master.utility.LocalDateTimeDeserializer;
@@ -24,16 +24,21 @@ import java.util.Objects;
 public record DeckResponse(@NotBlank String id,
                            @NotBlank String title,
                            String description,
-                           @NonNull @Valid UserPublicResponse owner,
+                           String icon,
+                           String color,
+                           @NotNull @Valid UserPublicResponse owner,
                            @NotNull @Valid LanguageResponse sourceLanguage,
                            @NotNull @Valid LanguageResponse targetLanguage,
                            @NotNull Boolean isPublic,
+                           @NotNull Boolean isOfficial,
+                           @NotNull Boolean owned,
+                           @NotNull Boolean likedByMe,
                            @NotNull @Min(0) Long likesCount,
                            @NotNull @Min(0) Long copiesCount,
                            @NotNull @Min(0) Long cardsCount,
-                           @NotNull List<TagResponse> tags,
+                           @NotNull @Valid List<TagResponse> tags,
                            String sourceDeckId,
-
+                           @Valid DeckProgressResponse progress,
                            @JsonSerialize(using = LocalDateTimeSerializer.class)
                            @JsonDeserialize(using = LocalDateTimeDeserializer.class)
                            @NotNull LocalDateTime createdAt,
@@ -48,18 +53,23 @@ public record DeckResponse(@NotBlank String id,
         parts.add("id = " + id);
         parts.add("title = " + title);
         if (description != null) parts.add("description = " + description);
+        if (icon != null) parts.add("icon = " + icon);
+        if (color != null) parts.add("color = " + color);
         parts.add("owner = " + owner);
         parts.add("sourceLanguage = " + sourceLanguage);
         parts.add("targetLanguage = " + targetLanguage);
         parts.add("isPublic = " + isPublic);
+        parts.add("isOfficial = " + isOfficial);
+        parts.add("owned = " + owned);
+        parts.add("likedByMe = " + likedByMe);
         parts.add("likesCount = " + likesCount);
         parts.add("copiesCount = " + copiesCount);
         parts.add("cardsCount = " + cardsCount);
         parts.add("tags = " + tags);
         if (sourceDeckId != null) parts.add("sourceDeckId = " + sourceDeckId);
+        if (progress != null) parts.add("progress = " + progress);
         parts.add("createdAt = " + createdAt);
         parts.add("updatedAt = " + updatedAt);
-
         return "DeckResponse: [" + String.join(", ", parts) + "]";
     }
 
@@ -72,24 +82,30 @@ public record DeckResponse(@NotBlank String id,
         DeckResponse that = (DeckResponse) o;
         return Objects.equals(id, that.id) &&
                 Objects.equals(title, that.title) &&
-                Objects.equals(likesCount, that.likesCount) &&
-                Objects.equals(cardsCount, that.cardsCount) &&
-                Objects.equals(isPublic, that.isPublic) &&
-                Objects.equals(copiesCount, that.copiesCount) &&
                 Objects.equals(description, that.description) &&
-                Objects.equals(sourceDeckId, that.sourceDeckId) &&
-                Objects.equals(tags, that.tags) &&
-                Objects.equals(createdAt, that.createdAt) &&
-                Objects.equals(updatedAt, that.updatedAt) &&
+                Objects.equals(icon, that.icon) &&
+                Objects.equals(color, that.color) &&
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(sourceLanguage, that.sourceLanguage) &&
-                Objects.equals(targetLanguage, that.targetLanguage);
+                Objects.equals(targetLanguage, that.targetLanguage) &&
+                Objects.equals(isPublic, that.isPublic) &&
+                Objects.equals(isOfficial, that.isOfficial) &&
+                Objects.equals(owned, that.owned) &&
+                Objects.equals(likedByMe, that.likedByMe) &&
+                Objects.equals(likesCount, that.likesCount) &&
+                Objects.equals(copiesCount, that.copiesCount) &&
+                Objects.equals(cardsCount, that.cardsCount) &&
+                Objects.equals(tags, that.tags) &&
+                Objects.equals(sourceDeckId, that.sourceDeckId) &&
+                Objects.equals(progress, that.progress) &&
+                Objects.equals(createdAt, that.createdAt) &&
+                Objects.equals(updatedAt, that.updatedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, description, owner, sourceLanguage,
-                targetLanguage, isPublic, likesCount, copiesCount, cardsCount,
-                tags, sourceDeckId, createdAt, updatedAt);
+        return Objects.hash(id, title, description, icon, color, owner, sourceLanguage, targetLanguage,
+                isPublic, isOfficial, owned, likedByMe, likesCount, copiesCount, cardsCount, tags,
+                sourceDeckId, progress, createdAt, updatedAt);
     }
 }

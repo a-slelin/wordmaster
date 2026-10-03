@@ -23,5 +23,5 @@ public interface TagMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "decks", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    Tag patch(@MappingTarget Tag tag, TagRequest request);
+    void patch(@MappingTarget Tag tag, TagRequest request);
 }

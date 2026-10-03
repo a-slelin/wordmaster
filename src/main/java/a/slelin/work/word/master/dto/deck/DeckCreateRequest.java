@@ -4,49 +4,37 @@ import a.slelin.work.word.master.dto.RequestDto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Builder
-public record DeckCreateRequest(@NotBlank String title,
-                                String description,
+public record DeckCreateRequest(@NotBlank @Size(min = 3, max = 255) String title,
+                                @Size(max = 2000) String description,
+                                @Size(max = 16) String icon,
+                                @Size(max = 16) String color,
                                 @NotNull @Min(1) Long sourceLanguageId,
                                 @NotNull @Min(1) Long targetLanguageId,
                                 @NotNull Boolean isPublic,
-                                @NotNull List<Long> tagIds) implements RequestDto {
-
-    public DeckCreateRequest(String title, String description, Long sourceLanguageId,
-                             Long targetLanguageId, Boolean isPublic) {
-        this(title, description, sourceLanguageId, targetLanguageId, isPublic, new ArrayList<>());
-    }
-
-    public DeckCreateRequest(String title, Long sourceLanguageId,
-                             Long targetLanguageId, Boolean isPublic) {
-        this(title, null, sourceLanguageId, targetLanguageId, isPublic);
-    }
+                                List<Long> tagIds) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("DeckCreateRequest: [");
-        sb.append("title = ").append(title);
-        if (description != null) {
-            sb.append(", description = ").append(description);
-        }
-        sb.append(", sourceLanguageId = ").append(sourceLanguageId)
-                .append(", targetLanguageId = ").append(targetLanguageId)
-                .append(", isPublic = ").append(isPublic);
-        if (!tagIds.isEmpty()) {
-            sb.append(", tagIds = ")
-                    .append(tagIds.stream().map(String::valueOf).collect(Collectors.joining(", ")));
-        }
-        sb.append("]");
-        return sb.toString();
+        List<String> parts = new ArrayList<>();
+        parts.add("title = " + title);
+        if (description != null) parts.add("description = " + description);
+        if (icon != null) parts.add("icon = " + icon);
+        if (color != null) parts.add("color = " + color);
+        parts.add("sourceLanguageId = " + sourceLanguageId);
+        parts.add("targetLanguageId = " + targetLanguageId);
+        parts.add("isPublic = " + isPublic);
+        if (tagIds != null) parts.add("tagIds = " + tagIds);
+        return "DeckCreateRequest: [" + String.join(", ", parts) + "]";
     }
 
     @Override
@@ -57,15 +45,18 @@ public record DeckCreateRequest(@NotBlank String title,
 
         DeckCreateRequest that = (DeckCreateRequest) o;
         return Objects.equals(title, that.title) &&
-                Objects.equals(isPublic, that.isPublic) &&
-                Objects.equals(tagIds, that.tagIds) &&
                 Objects.equals(description, that.description) &&
+                Objects.equals(icon, that.icon) &&
+                Objects.equals(color, that.color) &&
                 Objects.equals(sourceLanguageId, that.sourceLanguageId) &&
-                Objects.equals(targetLanguageId, that.targetLanguageId);
+                Objects.equals(targetLanguageId, that.targetLanguageId) &&
+                Objects.equals(isPublic, that.isPublic) &&
+                Objects.equals(tagIds, that.tagIds);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(title, description, sourceLanguageId, targetLanguageId, isPublic, tagIds);
+        return Objects.hash(title, description, icon, color, sourceLanguageId, targetLanguageId, isPublic,
+                tagIds);
     }
 }

@@ -20,9 +20,13 @@ public interface CardMapper {
     @Mapping(target = "deck", ignore = true)
     @Mapping(target = "cardProgresses", ignore = true)
     @Mapping(target = "trainingAnswers", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
     Card toEntity(CardCreateRequest request);
+
+    @Mapping(target = "deck", ignore = true)
+    @Mapping(target = "cardProgresses", ignore = true)
+    @Mapping(target = "trainingAnswers", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    Card copy(Card card);
 
     @Mapping(target = "deckId", source = "deck.id")
     CardResponse toDto(Card card);
@@ -34,7 +38,7 @@ public interface CardMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    Card patch(@MappingTarget Card card, CardUpdateRequest request);
+    void patch(@MappingTarget Card card, CardUpdateRequest request);
 
     @Mapping(target = "id", source = "card.id")
     @Mapping(target = "deckId", source = "card.deck.id")

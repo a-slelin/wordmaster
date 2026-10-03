@@ -2,6 +2,7 @@ package a.slelin.work.word.master.dto.training;
 
 import a.slelin.work.word.master.dto.RequestDto;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -10,17 +11,17 @@ import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record TrainingAnswerRequest(@NotBlank String sessionId,
-                                    @NotBlank String cardId,
-                                    @NotBlank String grade) implements RequestDto {
+public record TrainingAnswerRequest(@NotBlank String cardId,
+                                    String grade,
+                                    @Size(max = 255) String answer) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
         List<String> parts = new ArrayList<>();
-        parts.add("sessionId = " + sessionId);
         parts.add("cardId = " + cardId);
-        parts.add("grade = " + grade);
+        if (grade != null) parts.add("grade = " + grade);
+        if (answer != null) parts.add("answer = " + answer);
         return "TrainingAnswerRequest: [" + String.join(", ", parts) + "]";
     }
 
@@ -31,13 +32,13 @@ public record TrainingAnswerRequest(@NotBlank String sessionId,
         }
 
         TrainingAnswerRequest that = (TrainingAnswerRequest) o;
-        return Objects.equals(grade, that.grade) &&
-                Objects.equals(cardId, that.cardId) &&
-                Objects.equals(sessionId, that.sessionId);
+        return Objects.equals(cardId, that.cardId) &&
+                Objects.equals(grade, that.grade) &&
+                Objects.equals(answer, that.answer);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sessionId, cardId, grade);
+        return Objects.hash(cardId, grade, answer);
     }
 }

@@ -21,8 +21,6 @@ public interface UserMapper {
     @Mapping(target = "deckLikes", ignore = true)
     @Mapping(target = "cardProgresses", ignore = true)
     @Mapping(target = "trainingSessions", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
     User toEntity(RegisterRequest request);
 
     @Mapping(target = "role", source = "role", qualifiedByName = "roleToDisplayName")
@@ -39,7 +37,7 @@ public interface UserMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    User patch(@MappingTarget User user, UserRequest request);
+    void patch(@MappingTarget User user, UserRequest request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "username", ignore = true)
@@ -52,7 +50,7 @@ public interface UserMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    User applyRole(@MappingTarget User user, AdminUpdateUserRoleRequest request);
+    void applyRole(@MappingTarget User user, AdminUpdateUserRoleRequest request);
 
     @Named("roleToDisplayName")
     default String roleToDisplayName(Role role) {
