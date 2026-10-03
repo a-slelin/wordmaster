@@ -39,7 +39,7 @@ public class Deck extends Audit {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_deck_id")
     private Deck sourceDeck;
 
@@ -49,6 +49,12 @@ public class Deck extends Audit {
     private String title;
 
     private String description;
+
+    @Size(max = 16)
+    private String icon;
+
+    @Size(max = 16)
+    private String color;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -66,9 +72,15 @@ public class Deck extends Audit {
             nullable = false)
     private Language targetLanguage;
 
+    @NotNull
     @Column(nullable = false,
             name = "is_public")
-    private boolean isPublic;
+    private Boolean isPublic;
+
+    @NotNull
+    @Column(nullable = false,
+            name = "is_official")
+    private Boolean isOfficial;
 
     @Min(0)
     @NotNull
@@ -85,6 +97,7 @@ public class Deck extends Audit {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @ManyToMany(fetch = FetchType.LAZY)
+    @OrderBy("name ASC")
     @JoinTable(name = "deck_tag",
             joinColumns = @JoinColumn(name = "deck_id", nullable = false),
             inverseJoinColumns = @JoinColumn(name = "tag_id", nullable = false))
@@ -94,9 +107,16 @@ public class Deck extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "deck",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
+    )
+    @OrderBy("position ASC")
+    private List<Card> cards;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "deck",
+            fetch = FetchType.LAZY
     )
     private List<DeckLikes> deckLikes;
 
@@ -104,9 +124,7 @@ public class Deck extends Audit {
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "deck",
-            orphanRemoval = true,
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            fetch = FetchType.LAZY
     )
     private List<TrainingSession> trainingSessions;
 }

@@ -1,0 +1,137 @@
+databaseChangeLog:
+  - changeSet:
+      id: 104-seed-cards-irregular
+      author: a.slelin
+      changes:
+        - loadData:
+            tableName: card
+            file: classpath:/db/seed/irregular.csv
+            encoding: UTF-8
+            separator: ','
+            quotchar: '"'
+            columns:
+              - column: { name: deck_id, type: UUID }
+              - column: { name: word, type: STRING }
+              - column: { name: translation, type: STRING }
+              - column: { name: transcription, type: STRING }
+              - column: { name: example_sentence, type: STRING }
+              - column: { name: position, type: NUMERIC }
+  - changeSet:
+      id: 104-seed-cards-phrasal
+      author: a.slelin
+      changes:
+        - loadData:
+            tableName: card
+            file: classpath:/db/seed/phrasal.csv
+            encoding: UTF-8
+            separator: ','
+            quotchar: '"'
+            columns:
+              - column: { name: deck_id, type: UUID }
+              - column: { name: word, type: STRING }
+              - column: { name: translation, type: STRING }
+              - column: { name: transcription, type: STRING }
+              - column: { name: example_sentence, type: STRING }
+              - column: { name: position, type: NUMERIC }
+  - changeSet:
+      id: 104-seed-cards-frequent
+      author: a.slelin
+      changes:
+        - loadData:
+            tableName: card
+            file: classpath:/db/seed/frequent.csv
+            encoding: UTF-8
+            separator: ','
+            quotchar: '"'
+            columns:
+              - column: { name: deck_id, type: UUID }
+              - column: { name: word, type: STRING }
+              - column: { name: translation, type: STRING }
+              - column: { name: transcription, type: STRING }
+              - column: { name: example_sentence, type: STRING }
+              - column: { name: position, type: NUMERIC }
+  - changeSet:
+      id: 104-seed-cards-idioms
+      author: a.slelin
+      changes:
+        - loadData:
+            tableName: card
+            file: classpath:/db/seed/idioms.csv
+            encoding: UTF-8
+            separator: ','
+            quotchar: '"'
+            columns:
+              - column: { name: deck_id, type: UUID }
+              - column: { name: word, type: STRING }
+              - column: { name: translation, type: STRING }
+              - column: { name: transcription, type: STRING }
+              - column: { name: example_sentence, type: STRING }
+              - column: { name: position, type: NUMERIC }
+  - changeSet:
+      id: 104-seed-cards-it
+      author: a.slelin
+      changes:
+        - loadData:
+            tableName: card
+            file: classpath:/db/seed/it.csv
+            encoding: UTF-8
+            separator: ','
+            quotchar: '"'
+            columns:
+              - column: { name: deck_id, type: UUID }
+              - column: { name: word, type: STRING }
+              - column: { name: translation, type: STRING }
+              - column: { name: transcription, type: STRING }
+              - column: { name: example_sentence, type: STRING }
+              - column: { name: position, type: NUMERIC }
+  - changeSet:
+      id: 104-seed-cards-travel
+      author: a.slelin
+      changes:
+        - loadData:
+            tableName: card
+            file: classpath:/db/seed/travel.csv
+            encoding: UTF-8
+            separator: ','
+            quotchar: '"'
+            columns:
+              - column: { name: deck_id, type: UUID }
+              - column: { name: word, type: STRING }
+              - column: { name: translation, type: STRING }
+              - column: { name: transcription, type: STRING }
+              - column: { name: example_sentence, type: STRING }
+              - column: { name: position, type: NUMERIC }
+  - changeSet:
+      id: 104-seed-cards-spanish
+      author: a.slelin
+      changes:
+        - loadData:
+            tableName: card
+            file: classpath:/db/seed/spanish.csv
+            encoding: UTF-8
+            separator: ','
+            quotchar: '"'
+            columns:
+              - column: { name: deck_id, type: UUID }
+              - column: { name: word, type: STRING }
+              - column: { name: translation, type: STRING }
+              - column: { name: transcription, type: STRING }
+              - column: { name: example_sentence, type: STRING }
+              - column: { name: position, type: NUMERIC }
+  - changeSet:
+      id: 104-seed-cards-german
+      author: a.slelin
+      changes:
+        - loadData:
+            tableName: card
+            file: classpath:/db/seed/german.csv
+            encoding: UTF-8
+            separator: ','
+            quotchar: '"'
+            columns:
+              - column: { name: deck_id, type: UUID }
+              - column: { name: word, type: STRING }
+              - column: { name: translation, type: STRING }
+              - column: { name: transcription, type: STRING }
+              - column: { name: example_sentence, type: STRING }
+              - column: { name: position, type: NUMERIC }

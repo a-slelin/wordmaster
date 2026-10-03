@@ -1,23 +1,25 @@
 package a.slelin.work.word.master.dto.card;
 
 import a.slelin.work.word.master.dto.RequestDto;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record CardBulkCreateRequest(@NotNull List<CardCreateRequest> cards) implements RequestDto {
+public record CardBulkCreateRequest(@NotEmpty @Size(max = 1000) List<@Valid CardCreateRequest> cards) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        if (cards == null || cards.isEmpty()) {
-            return "CardBulkCreateRequest: [empty]";
-        }
-        return "CardBulkCreateRequest: [cards = " + cards + "]";
+        List<String> parts = new ArrayList<>();
+        parts.add("cards = " + cards);
+        return "CardBulkCreateRequest: [" + String.join(", ", parts) + "]";
     }
 
     @Override

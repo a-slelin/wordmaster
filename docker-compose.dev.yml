@@ -1,0 +1,19 @@
+# Only PostgreSQL for local development (backend: mvn spring-boot:run, frontend: npm run dev).
+#   docker compose -f docker-compose.dev.yml up -d
+name: wordmaster-dev
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-WORDMASTER}
+      POSTGRES_USER: ${DB_USER_NAME:-word_master_user}
+      POSTGRES_PASSWORD: ${DB_USER_PASSWORD:-password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db-dev-data:/var/lib/postgresql/data
+
+volumes:
+  db-dev-data:

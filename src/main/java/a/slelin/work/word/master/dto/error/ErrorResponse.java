@@ -62,7 +62,7 @@ public record ErrorResponse(@NotBlank String path,
                 .message(e.getMessage())
                 .exception(e.getClass().getSimpleName())
                 .causeException(e.getCause() == null ? null
-                        : ((Exception) e.getCause()).getClass().getSimpleName())
+                        : e.getCause().getClass().getSimpleName())
                 .timestamp(LocalDateTime.now());
     }
 

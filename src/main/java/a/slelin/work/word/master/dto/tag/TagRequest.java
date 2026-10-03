@@ -1,18 +1,24 @@
 package a.slelin.work.word.master.dto.tag;
 
 import a.slelin.work.word.master.dto.RequestDto;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record TagRequest(String name) implements RequestDto {
+public record TagRequest(@NotBlank @Size(min = 2, max = 50) String name) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        return name == null ? "TagRequest: [empty]" : "TagRequest: [name = %s]".formatted(name);
+        List<String> parts = new ArrayList<>();
+        parts.add("name = " + name);
+        return "TagRequest: [" + String.join(", ", parts) + "]";
     }
 
     @Override
@@ -21,8 +27,8 @@ public record TagRequest(String name) implements RequestDto {
             return false;
         }
 
-        TagRequest tag = (TagRequest) o;
-        return Objects.equals(name, tag.name);
+        TagRequest that = (TagRequest) o;
+        return Objects.equals(name, that.name);
     }
 
     @Override

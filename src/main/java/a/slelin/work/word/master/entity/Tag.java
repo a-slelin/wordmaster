@@ -27,7 +27,7 @@ public class Tag implements BaseEntity {
     private Long id;
 
     @NotBlank
-    @Size(min = 3, max = 255)
+    @Size(min = 2, max = 50)
     @Column(nullable = false,
             unique = true)
     private String name;

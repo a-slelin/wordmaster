@@ -14,7 +14,7 @@ import java.util.Objects;
 @Builder
 public record PageResponse(@NotNull @Min(0) Integer number,
                            @NotNull @Min(1) Integer size,
-                           @NotNull @Valid List<SortResponse> sorts,
+                           @NotNull List<@Valid SortResponse> sorts,
                            @NotNull @Min(0) Long totalElements,
                            @NotNull @Min(0) Integer totalPages,
                            boolean first,

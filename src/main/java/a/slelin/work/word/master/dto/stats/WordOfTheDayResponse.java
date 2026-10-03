@@ -14,6 +14,8 @@ public record WordOfTheDayResponse(@NotBlank String cardId,
                                    @NotBlank String word,
                                    @NotBlank String translation,
                                    String transcription,
+                                   String exampleSentence,
+                                   @NotBlank String languageCode,
                                    @NotBlank String deckId,
                                    @NotBlank String deckTitle) implements ResponseDto {
 
@@ -25,6 +27,8 @@ public record WordOfTheDayResponse(@NotBlank String cardId,
         parts.add("word = " + word);
         parts.add("translation = " + translation);
         if (transcription != null) parts.add("transcription = " + transcription);
+        if (exampleSentence != null) parts.add("exampleSentence = " + exampleSentence);
+        parts.add("languageCode = " + languageCode);
         parts.add("deckId = " + deckId);
         parts.add("deckTitle = " + deckTitle);
         return "WordOfTheDayResponse: [" + String.join(", ", parts) + "]";
@@ -37,16 +41,19 @@ public record WordOfTheDayResponse(@NotBlank String cardId,
         }
 
         WordOfTheDayResponse that = (WordOfTheDayResponse) o;
-        return Objects.equals(word, that.word) &&
-                Objects.equals(cardId, that.cardId) &&
-                Objects.equals(deckId, that.deckId) &&
-                Objects.equals(deckTitle, that.deckTitle) &&
+        return Objects.equals(cardId, that.cardId) &&
+                Objects.equals(word, that.word) &&
                 Objects.equals(translation, that.translation) &&
-                Objects.equals(transcription, that.transcription);
+                Objects.equals(transcription, that.transcription) &&
+                Objects.equals(exampleSentence, that.exampleSentence) &&
+                Objects.equals(languageCode, that.languageCode) &&
+                Objects.equals(deckId, that.deckId) &&
+                Objects.equals(deckTitle, that.deckTitle);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cardId, word, translation, transcription, deckId, deckTitle);
+        return Objects.hash(cardId, word, translation, transcription, exampleSentence, languageCode, deckId,
+                deckTitle);
     }
 }
