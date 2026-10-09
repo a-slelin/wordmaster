@@ -4,3 +4,6 @@
 *target/
 *.iml
 *.log
+.env
+agent/workspace/
+.venv
