@@ -1,49 +1,59 @@
+# agent/agent.py — Шаг 2. Чат с историей
+
 import os
 
-from dotenv import load_dotenv  # читает файл .env
-from openai import OpenAI  # клиент OpenAI-совместимого API
+from dotenv import load_dotenv
+from openai import OpenAI
 
-# 1. Загружаем переменные из .env в окружение процесса
 load_dotenv()
 
 API_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = os.getenv("MODEL")  # второй аргумент — значение по умолчанию
+MODEL = os.getenv("MODEL")
 
 if not API_KEY:
     raise SystemExit("Не найден OPENROUTER_API_KEY. Проверьте файл agent/.env")
 
-# 2. Создаём клиента. Библиотека openai, но base_url указывает на OpenRouter,
-#    поэтому запросы уходят туда (API у них совместимый)
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=API_KEY,
-)
+client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
-# 3. История сообщений. Пока одно сообщение от пользователя.
-#    role: "system" — инструкции, "user" — пользователь, "assistant" — модель
+# Системный промпт — инструкция для модели, всегда первый в истории
+SYSTEM_PROMPT = "Ты — дружелюбный помощник. Отвечай кратко, по-русски."
+
+# Вся «память» модели — это этот список. Сама модель ничего не помнит
+# между запросами: каждый раз мы отправляем ей всю переписку заново.
 messages = [
-    {"role": "user", "content": "Что такое токен?"},
+    {"role": "system", "content": SYSTEM_PROMPT},
 ]
 
-# 4. Один запрос к модели
-response = client.chat.completions.create(
-    model=MODEL,
-    messages=messages,
-)
+print("Чат запущен. Для выхода введите 'exit' или нажмите Ctrl+C.")
 
-# 5. Разбираем ответ.
-#    choices — список вариантов ответа; по умолчанию он один, поэтому [0]
-choice = response.choices[0]
+while True:
+    try:
+        question = input("\nВы: ").strip()
+    except (KeyboardInterrupt, EOFError):   # Ctrl+C / Ctrl+Z — выходим без трейсбека
+        break
 
-print("=== content ===")
-print(choice.message.content)  # текст ответа модели
+    if question.lower() in ("exit", "quit", "выход"):
+        break
+    if not question:                         # пустую строку не отправляем
+        continue
 
-print("\n=== finish_reason ===")
-print(choice.finish_reason)  # stop — модель закончила сама,
-# length — упёрлась в лимит токенов
+    user_msg = {"role": "user", "content": question}
 
-print("\n=== usage ===")
-usage = response.usage
-print(f"prompt_tokens (вход):      {usage.prompt_tokens}")
-print(f"completion_tokens (выход): {usage.completion_tokens}")
-print(f"total_tokens:              {usage.total_tokens}")
+    # В запрос уходит вся история + новый вопрос
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=messages + [user_msg],
+    )
+
+    answer = response.choices[0].message.content or ""   # content может быть None
+    print(f"\nМодель: {answer.strip()}")
+
+    usage = response.usage
+    print(f"[вход: {usage.prompt_tokens}, выход: {usage.completion_tokens}]")
+
+    # Сохраняем вопрос и ответ в историю.
+    # ПРОВЕРКА «ЗАБЫВАНИЯ»: закомментируйте эти две строки
+    messages.append(user_msg)
+    messages.append({"role": "assistant", "content": answer})
+
+print("Пока!")
