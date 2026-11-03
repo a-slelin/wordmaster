@@ -22,7 +22,7 @@ if not API_KEY:
 
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
-MAX_STEPS = 10   # максимум итераций агентного цикла на один вопрос
+MAX_STEPS = 10  # максимум итераций агентного цикла на один вопрос
 
 # Песочница: папка workspace рядом с agent.py (не зависит от того, откуда запускаем)
 WORKSPACE = (Path(__file__).parent / "workspace").resolve()
@@ -58,7 +58,7 @@ def save_session(session_id: str, messages: list) -> None:
     data = [m for m in messages if m["role"] != "system"]
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    tmp.replace(path)          # атомарная замена: файл не останется «наполовину записанным»
+    tmp.replace(path)  # атомарная замена: файл не останется «наполовину записанным»
 
 
 def load_session(session_id: str) -> list:
@@ -67,20 +67,19 @@ def load_session(session_id: str) -> list:
     history = []
     if path.exists():
         history = json.loads(path.read_text(encoding="utf-8"))
-        history = [m for m in history if m["role"] != "system"]   # на всякий случай
+        history = [m for m in history if m["role"] != "system"]  # на всякий случай
         print(f"Сессия '{session_id}': загружено {len(history)} сообщений из {path.name}")
     else:
         print(f"Новая сессия '{session_id}' → {path.name}")
     return [{"role": "system", "content": SYSTEM_PROMPT}] + history
 
 
-
 # ======================= ПЕСОЧНИЦА =======================
 
 def safe_path(path: str) -> Path:
     """Превращает путь от модели в абсолютный и проверяет, что он внутри WORKSPACE."""
-    full = (WORKSPACE / path).resolve()          # resolve() раскрывает '..' и симлинки
-    if not full.is_relative_to(WORKSPACE):       # ← ЭТА СТРОКА не пускает за песочницу
+    full = (WORKSPACE / path).resolve()  # resolve() раскрывает '..' и симлинки
+    if not full.is_relative_to(WORKSPACE):  # ← ЭТА СТРОКА не пускает за песочницу
         raise PermissionError(f"доступ запрещён: путь '{path}' вне рабочей папки")
     return full
 
@@ -105,7 +104,7 @@ def read_file(path: str) -> str:
     if not file.is_file():
         raise FileNotFoundError(f"файл '{path}' не найден")
     text = file.read_text(encoding="utf-8")
-    limit = 20_000                                # не раздуваем контекст огромными файлами
+    limit = 20_000  # не раздуваем контекст огромными файлами
     if len(text) > limit:
         text = text[:limit] + f"\n...[обрезано, всего {len(text)} символов]"
     return text
@@ -124,6 +123,7 @@ def write_file(path: str, content: str) -> str:
     file.write_text(content, encoding="utf-8")
     return f"Файл '{path}' записан ({len(content)} символов)."
 
+
 # ======================= ИНСТРУМЕНТЫ WORDMASTER =======================
 
 CARDS_FILE = WORKSPACE / "cards.json"
@@ -131,15 +131,15 @@ TOPICS = ["food", "travel", "irregular_verbs"]
 
 # Стартовый набор карточек — создаётся, если cards.json ещё нет
 SEED_CARDS = [
-    {"id": 1, "word": "apple",      "translation": "яблоко",       "topic": "food"},
-    {"id": 2, "word": "bread",      "translation": "хлеб",         "topic": "food"},
-    {"id": 3, "word": "cheese",     "translation": "сыр",          "topic": "food"},
-    {"id": 4, "word": "luggage",    "translation": "багаж",        "topic": "travel"},
-    {"id": 5, "word": "departure",  "translation": "отправление",  "topic": "travel"},
-    {"id": 6, "word": "ticket",     "translation": "билет",        "topic": "travel"},
-    {"id": 7, "word": "go — went — gone",       "translation": "идти",     "topic": "irregular_verbs"},
-    {"id": 8, "word": "take — took — taken",    "translation": "брать",    "topic": "irregular_verbs"},
-    {"id": 9, "word": "write — wrote — written", "translation": "писать",  "topic": "irregular_verbs"},
+    {"id": 1, "word": "apple", "translation": "яблоко", "topic": "food"},
+    {"id": 2, "word": "bread", "translation": "хлеб", "topic": "food"},
+    {"id": 3, "word": "cheese", "translation": "сыр", "topic": "food"},
+    {"id": 4, "word": "luggage", "translation": "багаж", "topic": "travel"},
+    {"id": 5, "word": "departure", "translation": "отправление", "topic": "travel"},
+    {"id": 6, "word": "ticket", "translation": "билет", "topic": "travel"},
+    {"id": 7, "word": "go — went — gone", "translation": "идти", "topic": "irregular_verbs"},
+    {"id": 8, "word": "take — took — taken", "translation": "брать", "topic": "irregular_verbs"},
+    {"id": 9, "word": "write — wrote — written", "translation": "писать", "topic": "irregular_verbs"},
 ]
 
 
@@ -189,6 +189,7 @@ def save_result(card_id: int, correct: bool) -> str:
     mark = "верно" if correct else "неверно"
     return (f"Сохранено: карточка #{card_id} '{card['word']}' — {mark}. "
             f"Всего: верно {card['correct']}, ошибок {card['wrong']}.")
+
 
 # Описания инструментов для модели (JSON Schema). Модель видит только это,
 # а не код функций: по name и description она решает, что и когда вызвать.
@@ -299,16 +300,26 @@ TOOL_FUNCTIONS = {
 }
 
 
+# ======================= КОНТЕКСТ (lab3, шаг 2) =======================
+
+def estimate_tokens(messages: list, tools: list | None = None) -> int:
+    """Грубая оценка размера запроса: символы JSON // 4 (сообщения + описания tools)."""
+    text = json.dumps(messages, ensure_ascii=False)
+    if tools:
+        text += json.dumps(tools, ensure_ascii=False)  # tools тоже уходят в каждый запрос
+    return len(text) // 4
+
+
 # ======================= TODO 1: execute_tool =======================
 
 def execute_tool(name: str, raw_args: str) -> str:
     """Выполняет инструмент по имени. Любая ошибка возвращается СТРОКОЙ, а не исключением:
     так модель увидит, что пошло не так, и сможет отреагировать, а программа не упадёт."""
     try:
-        args = json.loads(raw_args or "{}")       # модель присылает аргументы JSON-строкой
+        args = json.loads(raw_args or "{}")  # модель присылает аргументы JSON-строкой
         if name not in TOOL_FUNCTIONS:
             return f"ОШИБКА: неизвестный инструмент '{name}'"
-        result = TOOL_FUNCTIONS[name](**args)      # **args: {"path": "x"} → path="x"
+        result = TOOL_FUNCTIONS[name](**args)  # **args: {"path": "x"} → path="x"
         return str(result)
     except Exception as e:
         return f"ОШИБКА: {e}"
@@ -319,6 +330,8 @@ def execute_tool(name: str, raw_args: str) -> str:
 def run_agent(messages: list, on_step=None) -> str:
     """Агентный цикл: модель → (инструменты → модель)* → финальный ответ."""
     for step in range(1, MAX_STEPS + 1):
+        estimate = estimate_tokens(messages, TOOLS)
+        print(f"\n[шаг {step}] оценка до запроса: ~{estimate} ток. ({len(messages)} сообщений)")
         # 1. Запрос к модели с описаниями инструментов
         response = client.chat.completions.create(
             model=MODEL,
@@ -327,7 +340,11 @@ def run_agent(messages: list, on_step=None) -> str:
         )
         msg = response.choices[0].message
         usage = response.usage
-        print(f"\n[шаг {step}] вход: {usage.prompt_tokens}, выход: {usage.completion_tokens}")
+        if usage and usage.prompt_tokens:
+            print(f"[шаг {step}] usage: prompt={usage.prompt_tokens}, completion={usage.completion_tokens}, "
+                  f"оценка/факт = {estimate / usage.prompt_tokens:.2f}")
+        else:
+            print(f"[шаг {step}] usage: провайдер не вернул данные")
 
         # 2. Сохраняем ответ ассистента в историю (вместе с tool_calls, если есть)
         assistant_msg = {"role": "assistant", "content": msg.content or ""}
@@ -354,11 +371,11 @@ def run_agent(messages: list, on_step=None) -> str:
             print(f"  ← {preview}{'...' if len(result) > 150 else ''}")
             messages.append({
                 "role": "tool",
-                "tool_call_id": tc.id,     # связывает результат с конкретным вызовом
+                "tool_call_id": tc.id,  # связывает результат с конкретным вызовом
                 "content": result,
             })
         if on_step:
-            on_step()              # сохраняем сессию, когда ВСЕ результаты tool уже в истории
+            on_step()  # сохраняем сессию, когда ВСЕ результаты tool уже в истории
         # и снова идём к модели — уже с результатами инструментов
 
     return f"Достигнут лимит шагов ({MAX_STEPS}), задача не завершена."
@@ -389,9 +406,9 @@ def main():
             continue
 
         messages.append({"role": "user", "content": question})
-        save()                                       # вопрос не потеряется, даже если API упадёт
-        answer = run_agent(messages, on_step=save)   # run_agent сам дописывает историю
-        save()                                       # финальный ответ ассистента
+        save()  # вопрос не потеряется, даже если API упадёт
+        answer = run_agent(messages, on_step=save)  # run_agent сам дописывает историю
+        save()  # финальный ответ ассистента
         print(f"\nАгент: {answer.strip()}")
 
     print(f"Сессия сохранена: {session_path(session_id)}")
