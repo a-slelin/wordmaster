@@ -5,5 +5,12 @@
 *.iml
 *.log
 .env
-agent/workspace/
 .venv
+
+# Песочница агента: рабочие файлы (cards.json, TODO.md, копия README) не коммитим,
+# но корпус документов для search_docs (lab3) — коммитим.
+agent/workspace/*
+!agent/workspace/docs/
+
+# Сессии агента (lab3): личные диалоги не коммитим, папку держим через .gitkeep
+agent/sessions/*.json
