@@ -24,6 +24,7 @@ client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
 MAX_STEPS = 10  # максимум итераций агентного цикла на один вопрос
 CONTEXT_BUDGET = int(os.getenv("CONTEXT_BUDGET", "6000"))  # бюджет в «условных токенах» estimate_tokens
+STRATEGY = os.getenv("STRATEGY", "summarize").lower()  # trim | summarize
 
 # Песочница: папка workspace рядом с agent.py (не зависит от того, откуда запускаем)
 WORKSPACE = (Path(__file__).parent / "workspace").resolve()
@@ -56,7 +57,7 @@ def session_path(session_id: str) -> Path:
 def save_session(session_id: str, messages: list) -> None:
     """Сохраняет историю БЕЗ system: промпт берётся из кода при каждом запуске."""
     path = session_path(session_id)
-    data = [m for m in messages if m["role"] != "system"]
+    data = [m for m in messages if m["role"] != "system" or is_memory(m)]  # память сохраняем
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(path)  # атомарная замена: файл не останется «наполовину записанным»
@@ -68,7 +69,7 @@ def load_session(session_id: str) -> list:
     history = []
     if path.exists():
         history = json.loads(path.read_text(encoding="utf-8"))
-        history = [m for m in history if m["role"] != "system"]  # на всякий случай
+        history = [m for m in history if m["role"] != "system" or is_memory(m)]
         print(f"Сессия '{session_id}': загружено {len(history)} сообщений из {path.name}")
     else:
         print(f"Новая сессия '{session_id}' → {path.name}")
@@ -311,6 +312,62 @@ def estimate_tokens(messages: list, tools: list | None = None) -> int:
     return len(text) // 4
 
 
+# ======================= СУММАРИЗАЦИЯ (lab3, шаг 4) =======================
+
+MEMORY_PREFIX = "[память диалога]"
+
+SUMMARY_PROMPT = (
+    "Ты сжимаешь старую часть диалога пользователя с агентом-тренажёром WordMaster в краткую память. "
+    "Ответь ОДНОЙ строкой до 80 слов, по-русски, строго в формате: "
+    "'[память диалога] Пользователя зовут … Цель: … Ранее сделано: … Открытые задачи: …'. "
+    "Чего нет в диалоге — пиши 'неизвестно'. Сохраняй имена, цели, числа, id карточек и принятые решения. "
+    "Если дана прошлая память — объедини её с новым фрагментом, не теряя важного."
+)
+
+
+def is_memory(m: dict) -> bool:
+    """Сообщение-память: system, которое начинается с [память диалога]."""
+    return m["role"] == "system" and (m.get("content") or "").startswith(MEMORY_PREFIX)
+
+
+def format_for_summary(msgs: list) -> str:
+    """Превращает удаляемые сообщения в простой текст для суммаризатора."""
+    lines = []
+    for m in msgs:
+        if m["role"] == "tool":
+            lines.append(f"результат инструмента: {m['content'][:300]}")  # не раздуваем сам запрос
+        elif m.get("tool_calls"):
+            calls = ", ".join(f"{tc['function']['name']}({tc['function']['arguments']})"
+                              for tc in m["tool_calls"])
+            lines.append(f"агент вызвал: {calls}")
+        else:
+            lines.append(f"{m['role']}: {m['content']}")
+    return "\n".join(lines)
+
+
+def summarize(old_memory: str | None, dropped: list) -> str | None:
+    """Отдельный короткий вызов модели БЕЗ tools. None — не получилось (тогда просто trim)."""
+    text = format_for_summary(dropped)
+    if old_memory:
+        text = f"Прошлая память:\n{old_memory}\n\nНовый фрагмент диалога:\n{text}"
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "system", "content": SUMMARY_PROMPT},
+                      {"role": "user", "content": text}],
+        )
+        summary = (response.choices[0].message.content or "").strip()
+    except Exception as e:
+        print(f"  SUMMARY: ошибка вызова ({e}) → fallback на TRIM")
+        return None
+    if not summary:
+        print("  SUMMARY: пустой ответ модели → fallback на TRIM")
+        return None
+    if not summary.startswith(MEMORY_PREFIX):
+        summary = f"{MEMORY_PREFIX} {summary}"
+    return summary
+
+
 def split_turns(messages: list) -> tuple[list, list]:
     """Делит историю на «голову» (system-сообщения в начале) и список ходов.
     Ход = user + все assistant/tool после него до следующего user."""
@@ -327,24 +384,34 @@ def split_turns(messages: list) -> tuple[list, list]:
 
 
 def ensure_context_budget(messages: list) -> None:
-    """Если оценка > CONTEXT_BUDGET — удаляет самые старые ходы ЦЕЛИКОМ.
-    system и текущий (последний) ход не трогаем. Меняет список на месте."""
+    """Если оценка > CONTEXT_BUDGET — убирает самые старые ходы ЦЕЛИКОМ.
+    STRATEGY=trim — просто удаляет; STRATEGY=summarize — сжимает их в [память диалога].
+    system, память и текущий (последний) ход не трогаем. Меняет список на месте."""
     before = estimate_tokens(messages, TOOLS)
     if before <= CONTEXT_BUDGET:
         return
     head, turns = split_turns(messages)
     flat = lambda ts: [m for t in ts for m in t]
-    removed_turns = removed_msgs = 0
+    dropped = []
+    removed_turns = 0
     while len(turns) > 1 and estimate_tokens(head + flat(turns), TOOLS) > CONTEXT_BUDGET:
-        dropped = turns.pop(0)  # самый старый ход: user + его assistant/tool
+        dropped += turns.pop(0)        # самый старый ход: user + его assistant/tool
         removed_turns += 1
-        removed_msgs += len(dropped)
-    messages[:] = head + flat(turns)  # [:] — меняем тот же список, что сохраняет сессия
+
+    if STRATEGY == "summarize" and dropped:
+        old_memory = next((m["content"] for m in head if is_memory(m)), None)
+        summary = summarize(old_memory, dropped)
+        if summary:
+            head = [m for m in head if not is_memory(m)] + [{"role": "system", "content": summary}]
+            print(f"  SUMMARY: {removed_turns} ход(ов) / {len(dropped)} сообщений → "
+                  f"память ~{len(summary) // 4} ток.: {summary}")
+
+    messages[:] = head + flat(turns)   # [:] — меняем тот же список, что сохраняет сессия
     after = estimate_tokens(messages, TOOLS)
-    print(f"  TRIM: removed {removed_turns} ход(ов) / {removed_msgs} сообщений, "
-          f"~{before} → ~{after} ток. (бюджет {CONTEXT_BUDGET})")
+    print(f"  TRIM: removed {removed_turns} ход(ов) / {len(dropped)} сообщений, "
+          f"~{before} → ~{after} ток. (бюджет {CONTEXT_BUDGET}, стратегия {STRATEGY})")
     if after > CONTEXT_BUDGET:
-        print(f"  TRIM: текущий ход сам по себе больше бюджета (~{after}), отправляем как есть")
+        print(f"  TRIM: после обрезки всё ещё больше бюджета (~{after}), отправляем как есть")
 
 
 # ======================= TODO 1: execute_tool =======================
