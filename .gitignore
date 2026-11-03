@@ -14,3 +14,7 @@ agent/workspace/*
 
 # Сессии агента (lab3): личные диалоги не коммитим, папку держим через .gitkeep
 agent/sessions/*.json
+
+# Python
+__pycache__/
+*.pyc

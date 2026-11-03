@@ -1,10 +1,12 @@
-# agent/agent.py — Шаг 3. Инструменты и агентный цикл
+# agent/agent.py — Лаб. 3: сессии, бюджет контекста, память (на основе агента из лаб. 2)
 
 import random
 from datetime import date
 
+import argparse
 import json
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -34,6 +36,43 @@ SYSTEM_PROMPT = (
     "Ты также тренажёр слов WordMaster: по просьбе пользователя давай карточки, "
     "показывай только слово, проверяй его ответ (синонимы засчитывай) и сохраняй результат."
 )
+
+# ======================= СЕССИИ (lab3, шаг 1) =======================
+
+# Краткосрочная память: история диалога хранится в agent/sessions/<id>.json
+SESSIONS_DIR = (Path(__file__).parent / "sessions").resolve()
+SESSIONS_DIR.mkdir(exist_ok=True)
+SESSION_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def session_path(session_id: str) -> Path:
+    """Путь к файлу сессии. Id проверяем, чтобы '../../.env' не вышел за sessions/."""
+    if not SESSION_ID_RE.match(session_id):
+        raise SystemExit(f"Некорректный id сессии '{session_id}': только буквы, цифры, '_' и '-'")
+    return SESSIONS_DIR / f"{session_id}.json"
+
+
+def save_session(session_id: str, messages: list) -> None:
+    """Сохраняет историю БЕЗ system: промпт берётся из кода при каждом запуске."""
+    path = session_path(session_id)
+    data = [m for m in messages if m["role"] != "system"]
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)          # атомарная замена: файл не останется «наполовину записанным»
+
+
+def load_session(session_id: str) -> list:
+    """Загружает историю и ставит свежий system-промпт первым (ровно один раз)."""
+    path = session_path(session_id)
+    history = []
+    if path.exists():
+        history = json.loads(path.read_text(encoding="utf-8"))
+        history = [m for m in history if m["role"] != "system"]   # на всякий случай
+        print(f"Сессия '{session_id}': загружено {len(history)} сообщений из {path.name}")
+    else:
+        print(f"Новая сессия '{session_id}' → {path.name}")
+    return [{"role": "system", "content": SYSTEM_PROMPT}] + history
+
 
 
 # ======================= ПЕСОЧНИЦА =======================
@@ -277,7 +316,7 @@ def execute_tool(name: str, raw_args: str) -> str:
 
 # ======================= TODO 2: run_agent =======================
 
-def run_agent(messages: list) -> str:
+def run_agent(messages: list, on_step=None) -> str:
     """Агентный цикл: модель → (инструменты → модель)* → финальный ответ."""
     for step in range(1, MAX_STEPS + 1):
         # 1. Запрос к модели с описаниями инструментов
@@ -318,6 +357,8 @@ def run_agent(messages: list) -> str:
                 "tool_call_id": tc.id,     # связывает результат с конкретным вызовом
                 "content": result,
             })
+        if on_step:
+            on_step()              # сохраняем сессию, когда ВСЕ результаты tool уже в истории
         # и снова идём к модели — уже с результатами инструментов
 
     return f"Достигнут лимит шагов ({MAX_STEPS}), задача не завершена."
@@ -326,7 +367,14 @@ def run_agent(messages: list) -> str:
 # ======================= ЧАТ =======================
 
 def main():
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    parser = argparse.ArgumentParser(description="Агент WordMaster")
+    parser.add_argument("--session", default=os.getenv("SESSION_ID", "default"),
+                        help="id сессии (файл agent/sessions/<id>.json)")
+    session_id = parser.parse_args().session
+
+    messages = load_session(session_id)
+    save = lambda: save_session(session_id, messages)
+
     print(f"Агент запущен. Рабочая папка: {WORKSPACE}")
     print("Для выхода введите 'exit' или нажмите Ctrl+C.")
 
@@ -341,9 +389,12 @@ def main():
             continue
 
         messages.append({"role": "user", "content": question})
-        answer = run_agent(messages)          # run_agent сам дописывает историю
+        save()                                       # вопрос не потеряется, даже если API упадёт
+        answer = run_agent(messages, on_step=save)   # run_agent сам дописывает историю
+        save()                                       # финальный ответ ассистента
         print(f"\nАгент: {answer.strip()}")
 
+    print(f"Сессия сохранена: {session_path(session_id)}")
     print("Пока!")
 
 
