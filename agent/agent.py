@@ -23,6 +23,7 @@ if not API_KEY:
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
 MAX_STEPS = 10  # максимум итераций агентного цикла на один вопрос
+CONTEXT_BUDGET = int(os.getenv("CONTEXT_BUDGET", "6000"))  # бюджет в «условных токенах» estimate_tokens
 
 # Песочница: папка workspace рядом с agent.py (не зависит от того, откуда запускаем)
 WORKSPACE = (Path(__file__).parent / "workspace").resolve()
@@ -310,6 +311,42 @@ def estimate_tokens(messages: list, tools: list | None = None) -> int:
     return len(text) // 4
 
 
+def split_turns(messages: list) -> tuple[list, list]:
+    """Делит историю на «голову» (system-сообщения в начале) и список ходов.
+    Ход = user + все assistant/tool после него до следующего user."""
+    i = 0
+    while i < len(messages) and messages[i]["role"] == "system":
+        i += 1
+    head, turns = messages[:i], []
+    for m in messages[i:]:
+        if m["role"] == "user" or not turns:
+            turns.append([m])  # новый ход начинается с user
+        else:
+            turns[-1].append(m)  # assistant/tool — в текущий ход
+    return head, turns
+
+
+def ensure_context_budget(messages: list) -> None:
+    """Если оценка > CONTEXT_BUDGET — удаляет самые старые ходы ЦЕЛИКОМ.
+    system и текущий (последний) ход не трогаем. Меняет список на месте."""
+    before = estimate_tokens(messages, TOOLS)
+    if before <= CONTEXT_BUDGET:
+        return
+    head, turns = split_turns(messages)
+    flat = lambda ts: [m for t in ts for m in t]
+    removed_turns = removed_msgs = 0
+    while len(turns) > 1 and estimate_tokens(head + flat(turns), TOOLS) > CONTEXT_BUDGET:
+        dropped = turns.pop(0)  # самый старый ход: user + его assistant/tool
+        removed_turns += 1
+        removed_msgs += len(dropped)
+    messages[:] = head + flat(turns)  # [:] — меняем тот же список, что сохраняет сессия
+    after = estimate_tokens(messages, TOOLS)
+    print(f"  TRIM: removed {removed_turns} ход(ов) / {removed_msgs} сообщений, "
+          f"~{before} → ~{after} ток. (бюджет {CONTEXT_BUDGET})")
+    if after > CONTEXT_BUDGET:
+        print(f"  TRIM: текущий ход сам по себе больше бюджета (~{after}), отправляем как есть")
+
+
 # ======================= TODO 1: execute_tool =======================
 
 def execute_tool(name: str, raw_args: str) -> str:
@@ -330,6 +367,7 @@ def execute_tool(name: str, raw_args: str) -> str:
 def run_agent(messages: list, on_step=None) -> str:
     """Агентный цикл: модель → (инструменты → модель)* → финальный ответ."""
     for step in range(1, MAX_STEPS + 1):
+        ensure_context_budget(messages)  # перед КАЖДЫМ запросом: tool-результаты растут внутри цикла
         estimate = estimate_tokens(messages, TOOLS)
         print(f"\n[шаг {step}] оценка до запроса: ~{estimate} ток. ({len(messages)} сообщений)")
         # 1. Запрос к модели с описаниями инструментов
