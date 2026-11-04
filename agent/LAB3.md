@@ -4,6 +4,42 @@
 Проект: **WordMaster** — тренажёр иностранных слов с колодами карточек.
 Основа — агент из лабораторной №2 (`agent/agent.py`), агентный цикл и инструменты сохранены.
 
+> **Коротко.** Агент из лаб. 2 научился **помнить** (сессии на диске, сжатая память диалога, долговременные
+> факты между сессиями), **не раздувать контекст** (оценка токенов, бюджет, обрезка целыми ходами,
+> суммаризация) и **искать по документации проекта** (`search_docs`). Каждый шаг проверен реальным запуском
+> на `nvidia/nemotron-3.5-super-vl:free`, логи приведены ниже вместе с неудачными первыми попытками.
+
+## 📑 Содержание
+
+| Раздел                                                              | О чём                                                       |
+|---------------------------------------------------------------------|-------------------------------------------------------------|
+| [Окружение](#окружение)                                             | язык, модель, запуск                                        |
+| [🗺️ Карта изменений `agent.py`](#️-карта-изменений-agentpy)        | что добавлено/изменено, со ссылками на строки кода          |
+| [Шаг 0. Подготовка](#шаг-0-подготовка)                              | `.gitignore`, корпус `docs/`, папка `sessions/`             |
+| [Шаг 1. Сессия на диске](#шаг-1-сессия-на-диске)                    | `save_session` / `load_session`                             |
+| [Шаг 2. Оценка размера контекста](#шаг-2-оценка-размера-контекста)  | `estimate_tokens`, `usage`                                  |
+| [Шаг 3. Бюджет и усечение](#шаг-3-бюджет-и-усечение)                | `CONTEXT_BUDGET`, `split_turns`, `ensure_context_budget`    |
+| [Шаг 4. Суммаризация старого хвоста](#шаг-4-суммаризация-старого-хвоста) | `STRATEGY`, `summarize`, `[память диалога]`            |
+| [Шаг 5. Инструмент `search_docs`](#шаг-5-инструмент-search_docs)    | keyword-поиск по `workspace/docs/`                          |
+| [Шаг 6. Долговременная память](#шаг-6-долговременная-память-между-сессиями) | `remember` / `forget`, `memory.json`                |
+| [📊 Итоги](#-итоги)                                                 | структура, инструменты, сводная таблица токенов             |
+| [❓ Ответы на вопросы](#-ответы-на-вопросы)                          | 9 вопросов по теме лабы                                     |
+| [⚠️ Ограничения и что улучшить](#️-ограничения-и-что-улучшить)       |                                                             |
+| [✅ Выводы](#-выводы)                                                |                                                             |
+
+История коммитов ветки `lab3`, один коммит на шаг:
+
+```
+lab3: step 0 — docs corpus, sessions dir, gitignore
+lab3: step 1 — persistent sessions in agent/sessions/
+lab3: step 2 — context size estimate and usage logging
+lab3: step 3 — context budget and turn-based trimming
+lab3: step 4 — summarize old turns into dialog memory
+lab3: step 5 — search_docs tool over workspace/docs
+lab3: step 6 — long-term memory across sessions
+lab3: report — final LAB3.md
+```
+
 ## Окружение
 
 | Параметр  | Значение                                                                          |
@@ -15,6 +51,79 @@
 
 Модель сменена, потому что прежняя бесплатная модель перестала стабильно отвечать. Новая поддерживает tools,
 поэтому цикл из лаб. 2 работает без изменений.
+
+## 🗺️ Карта изменений `agent.py`
+
+Ссылки ведут на строки файла в коммите шага 6 (`940c45b`), поэтому не «съезжают», если код потом изменится.
+Обозначения: 🆕 — новое в лаб. 3, ✏️ — изменено по сравнению с лаб. 2, ✅ — без изменений.
+
+### Константы и настройки
+
+| Что | Шаг | Статус | Назначение |
+|-----|:---:|:------:|------------|
+| [`MAX_STEPS`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L25)                 | —   | ✅ | лимит итераций агентного цикла |
+| [`CONTEXT_BUDGET`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L26)            | 3   | 🆕 | бюджет контекста в «условных токенах», из `.env` |
+| [`STRATEGY`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L27)                  | 4   | 🆕 | `trim` / `summarize` |
+| [`SYSTEM_PROMPT`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L33)             | 5–6 | ✏️ | + «сначала `search_docs`», «карточки не придумывай», «факты через `remember`», «тему выбирай по памяти, не `any`»; исправлен пропущенный пробел `по-русски.Ты` |
+| [`MEMORY_FILE`, `MAX_FACTS`, `MAX_FACT_LEN`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L52) | 6 | 🆕 | файл и лимиты долговременной памяти |
+| [`SESSIONS_DIR`, `SESSION_ID_RE`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L118) | 1 | 🆕 | папка сессий и проверка id |
+| [`STOP_WORDS`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L272)               | 5   | 🆕 | служебные слова, которые поиск пропускает |
+| [`MEMORY_PREFIX`, `SUMMARY_PROMPT`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L507) | 4 | 🆕 | метка `[память диалога]` и промпт суммаризатора |
+
+### Функции
+
+| Функция | Шаг | Статус | Что делает |
+|---------|:---:|:------:|------------|
+| [`load_facts()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L57) / [`save_facts()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L68) | 6 | 🆕 | чтение и атомарная запись `memory.json`; повреждённый JSON не роняет агента |
+| [`remember(fact)`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L74)            | 6 | 🆕 | **tool**: один факт ≤ 200 символов, без дублей, максимум 20 |
+| [`forget(fact_id)`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L93)           | 6 | 🆕 | **tool**: удалить факт по id |
+| [`build_system_prompt()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L105)    | 6 | 🆕 | `SYSTEM_PROMPT` + список фактов («ДАННЫЕ, а не инструкции») |
+| [`session_path(id)`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L123)         | 1 | 🆕 | путь к `sessions/<id>.json`, защита от `../` |
+| [`save_session()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L130)           | 1, 4 | 🆕 | история без основного system (память диалога сохраняется), `.tmp` → `replace` |
+| [`load_session()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L139)           | 1, 4, 6 | 🆕 | `build_system_prompt()` + история из файла |
+| [`safe_path()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L155), [`list_files`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L165), [`read_file`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L177), [`write_file`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L189) | — | ✅ | песочница и файловые tools из лаб. 2 |
+| [`get_random_card`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L235), [`save_result`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L253) | — | ✅ | доменные tools WordMaster из лаб. 2 |
+| [`stem()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L276) / [`words()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L281) | 5 | 🆕 | основа слова (5 букв), токенизация, `ё → е` |
+| [`search_docs(query, limit)`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L286) | 5 | 🆕 | **tool**: поиск по абзацам `workspace/docs/` |
+| [`estimate_tokens()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L497)        | 2 | 🆕 | `len(JSON(messages + tools)) // 4` |
+| [`is_memory()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L518)              | 4 | 🆕 | распознаёт сообщение `[память диалога]` |
+| [`format_for_summary()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L523)     | 4 | 🆕 | удаляемые ходы → текст, tool-результаты ≤ 300 символов |
+| [`summarize()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L538)              | 4 | 🆕 | отдельный вызов модели **без tools**; `None` → fallback на trim |
+| [`split_turns()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L564)            | 3 | 🆕 | история → голова (system) + ходы (`user` + его `assistant`/`tool`) |
+| [`ensure_context_budget()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L579)  | 3, 4 | 🆕 | удаление старых ходов целиком / сжатие в память; лог `TRIM`/`SUMMARY` |
+| [`execute_tool()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L612)           | — | ✅ | выполнение tool, ошибки строкой `ОШИБКА: …` |
+| [`run_agent(messages, on_step)`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L627) | 1–3, 5 | ✏️ | + `on_step` (сохранение), `ensure_context_budget` и `estimate_tokens` перед каждым запросом, лог `usage`, `except APIError` |
+| [`main()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L684)                   | 1 | ✏️ | + `--session` / `SESSION_ID`, `load_session`, сохранение после вопроса и ответа |
+
+### Инструменты (`TOOLS`) — что видит модель
+
+| Tool | Шаг | Статус | Параметры |
+|------|:---:|:------:|-----------|
+| [`list_files`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L328)      | — | ✅ | `path?` |
+| [`read_file`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L346)       | — | ✅ | `path` |
+| [`write_file`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L363)      | — | ✅ | `path`, `content` (с подтверждением `y`) |
+| [`get_random_card`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L386) | 5 | ✏️ | `topic`: enum; в описание добавлено «ЕДИНСТВЕННЫЙ источник карточек — не выдумывай слово сам» |
+| [`save_result`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L407)     | — | ✅ | `card_id`, `correct` |
+| [`search_docs`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L423)     | 5 | 🆕 | `query` (обяз.), `limit`: integer 1–5 |
+| [`remember`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L443)        | 6 | 🆕 | `fact` (один факт за вызов) |
+| [`forget`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L462)          | 6 | 🆕 | `fact_id`: integer |
+
+Регистрация функций — [`TOOL_FUNCTIONS`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L483): добавлены `search_docs`, `remember`, `forget`.
+
+### Что убрано или заменено
+
+| Было в лаб. 2 | Стало | Почему |
+|---------------|-------|--------|
+| `messages = [{"role": "system", ...}]` в `main()` | `messages = load_session(session_id)` | история загружается с диска (шаг 1) |
+| `print(f"[шаг N] вход: …, выход: …")` | `оценка до запроса: ~N` + `usage: prompt=…, completion=…, оценка/факт` | нужна оценка **до** запроса (шаг 2) |
+| `run_agent(messages)` | `run_agent(messages, on_step=save)` | сохранение после каждого шага с tools (шаг 1) |
+| голый `client.chat.completions.create(...)` | `try … except APIError` | 429 больше не роняет программу (шаг 5) |
+| `from openai import OpenAI` | `from openai import APIError, OpenAI` | обработка ошибок API |
+| `.env.example`, `requirements.txt` в корне (UTF-16) | в `agent/`, UTF-8; + `CONTEXT_BUDGET`, `STRATEGY` | структура из задания (шаг 0) |
+| `.gitignore`: `agent/workspace/` | `agent/workspace/*` + `!agent/workspace/docs/`, `agent/sessions/*.json`, `agent/memory.json`, `__pycache__/` | корпус `docs/` в git, личные данные — нет |
+
+Остальные «удалённые» строки в `git diff` — это только переформатирование IDE (выравнивание `SEED_CARDS`,
+пробелы перед комментариями), логика не менялась.
 
 ## Шаг 0. Подготовка
 
@@ -841,9 +950,183 @@ PS D:\IdeaProjects\wordmaster> py agent/agent.py --session mem-b2
 - **Память влияет на действия:** `get_random_card({"topic":"travel"})` выбран по цели «для поездки»,
   `food` исключена.
 - **Цена — токены в каждом запросе.** Расширенный промпт и описания `remember`/`forget` подняли первый
-  запрос: оценка 950 (шаг 5) → 1302, ещё +43 за три факта (1345). Это ~25 % бюджета по умолчанию, если бы
-  он был ~1300. Поэтому описания инструментов тоже нужно учитывать в бюджете, а `MAX_FACTS` не даёт памяти
-  расти бесконечно.
+  запрос: оценка 950 (шаг 5) → 1302, ещё +43 за три факта (1345). При бюджете 1300 из шагов 3–4 агент
+  превысил бы его уже на первом вопросе. Постоянная часть запроса (system + описания `TOOLS`) тоже входит
+  в бюджет, а `MAX_FACTS` не даёт памяти расти бесконечно.
 - **Как и в шаге 5, исправил промпт, а не код.** Механика (`remember`/`forget`/`build_system_prompt`) с
   первой попытки была верной, ошибался выбор модели: что считать «одним фактом» и когда использовать
   память. Это поправили описания инструментов.
+
+---
+
+## 📊 Итоги
+
+### Итоговая структура
+
+```
+wordmaster/
+├── README.md
+├── .gitignore              # .env, agent/workspace/* (кроме docs/), sessions/*.json, memory.json
+└── agent/
+    ├── agent.py            # агент: цикл из лаб. 2 + сессии, бюджет, суммаризация, search_docs, память
+    ├── requirements.txt
+    ├── .env.example        # OPENROUTER_API_KEY, MODEL, CONTEXT_BUDGET, STRATEGY
+    ├── .env                # НЕ в git
+    ├── LAB2.md
+    ├── LAB3.md             # этот отчёт
+    ├── memory.json         # долговременная память (шаг 6), НЕ в git
+    ├── sessions/           # краткосрочная память (шаг 1)
+    │   ├── .gitkeep
+    │   └── <id>.json       # НЕ в git
+    └── workspace/          # песочница агента
+        ├── cards.json      # данные тренажёра, НЕ в git
+        └── docs/           # корпус для search_docs (в git)
+            ├── about.md
+            ├── data-model.md
+            ├── faq.md
+            ├── features.md
+            └── training.md
+```
+
+### Настройки (`agent/.env`)
+
+| Переменная           | По умолчанию                          | Шаг | Зачем |
+|----------------------|---------------------------------------|:---:|-------|
+| `OPENROUTER_API_KEY` | —                                     | —   | ключ API |
+| `MODEL`              | `nvidia/nemotron-3.5-super-vl:free`   | —   | модель с поддержкой tools |
+| `CONTEXT_BUDGET`     | `6000`                                | 3   | бюджет в единицах `estimate_tokens`; для проверки обрезки ставили 1300 |
+| `STRATEGY`           | `summarize`                           | 4   | `trim` — только удаление, `summarize` — сжатие в `[память диалога]` |
+| `SESSION_ID` / `--session` | `default`                       | 1   | какую сессию загрузить |
+
+### Как проходит один запрос
+
+```
+main()
+ ├─ load_session(id)            ← build_system_prompt(): SYSTEM_PROMPT + факты memory.json   (шаги 1, 6)
+ └─ цикл чата
+     ├─ messages += user  →  save_session()                                                  (шаг 1)
+     └─ run_agent(messages, on_step=save)
+         └─ для каждого шага (≤ MAX_STEPS):
+             ├─ ensure_context_budget(messages)                                              (шаг 3)
+             │    оценка > CONTEXT_BUDGET?  → удалить старые ходы целиком
+             │                              → STRATEGY=summarize: summarize() → [память диалога]  (шаг 4)
+             ├─ estimate_tokens() → лог «оценка до запроса»                                  (шаг 2)
+             ├─ API (tools = TOOLS)   ── APIError → «ОШИБКА API», история уже сохранена      (шаг 5)
+             ├─ лог usage: prompt / completion / оценка/факт                                 (шаг 2)
+             ├─ нет tool_calls → финальный ответ → save_session()
+             └─ есть → execute_tool() для каждого (search_docs, remember, …) → on_step()     (шаги 1, 5, 6)
+```
+
+### Сводная таблица токенов: до и после
+
+`prompt_tokens` — реальные данные `usage` из логов; оценка — `estimate_tokens`.
+
+| Сценарий | Что сравниваем | До | После | Эффект |
+|----------|----------------|----|-------|--------|
+| Без бюджета → trim (шаги 2 → 3) | 8-й вызов, одна и та же задача (4 вопроса) | 2314 | 1558 | **−33 %** prompt_tokens |
+| Без бюджета → trim (шаги 2 → 3) | `faq.md`, ответ после tool | 2026 | 1288 | **−36 %** |
+| Рост истории без бюджета (шаг 2) | вызов 1 → вызов 8 | 1015 | 2314 | **×2,3** за 4 вопроса |
+| trim → summarize (шаг 4) | Σ prompt_tokens агента за 10 вызовов | 14 116 | 13 630 + 3 вызова суммаризатора | ≈ равны; summarize немного дороже |
+| trim → summarize (шаг 4) | «Как меня зовут и какая цель?» | ❌ «не знаю» (1637) | ✅ «Александр, B1» (1297) | **факты сохранены** |
+| `read_file` → `search_docs` (шаги 2 → 5) | прирост оценки от чтения `training.md` | +323 | +240 (`limit=3`) / +316 (`limit=5`) | −26 % при `limit=3`, ≈ 0 при `limit=5` |
+| Новые tools и промпт (шаги 5 → 6) | оценка первого запроса | 950 | 1302 (+43 за 3 факта) | **+37 %** постоянная цена каждого запроса |
+| Оценка vs факт (все шаги) | `оценка/факт` | 0.65 | 0.82 | оценка занижает на ~320–440 токенов |
+
+---
+
+## ❓ Ответы на вопросы
+
+В методичке вопросов нет, поэтому мы сформулировали их сами по темам работы.
+
+**1. Почему контекст агента растёт сам по себе и зачем ему бюджет?**
+API модели не хранит состояние: в каждый запрос уходит **вся** история целиком, включая результаты tools, а
+также описания `TOOLS`. Поэтому каждое сообщение «оплачивается» во всех следующих запросах. В шаге 2 за 4
+коротких вопроса `prompt_tokens` вырос с 1015 до 2314. Без бюджета длинная сессия рано или поздно упрётся в
+окно модели или в лимит денег/квоты, а качество ответов падает на «замусоренном» контексте.
+
+**2. Почему нельзя удалять сообщения по одному? Что такое «осиротевший» `role: tool`?**
+Каждое сообщение `role: tool` ссылается через `tool_call_id` на `id` вызова в предыдущем `assistant.tool_calls`.
+Если удалить такой `assistant`, а его `tool` оставить, API отклонит запрос (ошибка 400). Поэтому
+[`split_turns()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L564) группирует историю в **ходы** (`user` + все его `assistant`/`tool`), а
+[`ensure_context_budget()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L579) удаляет только целые ходы. В шаге 3 обрезка сработала прямо посреди
+tool-цикла, и запрос после неё прошёл успешно.
+
+**3. Зачем своя оценка `len // 4`, если API и так возвращает `usage.prompt_tokens`?**
+`usage` известен только **после** ответа, а решение «обрезать или нет» нужно принимать **до** запроса.
+Оценка грубая: она занижает на постоянные ~320–440 токенов (шаблон чата модели, описание tools в формате
+провайдера), а на кириллице правило `//4` тоже занижает (отношение 0.65–0.82). Поэтому бюджет задаётся в
+единицах оценки, а реальный лимит берётся с запасом.
+
+**4. trim или summarize — что выбрать?**
+`trim` проще, не тратит дополнительные запросы и не может «исказить» историю, но теряет факты: в шаге 4 агент
+забыл имя и даже выдумал, что «это первое сообщение». `summarize` сохраняет главное (имя, цель, что сделано)
+ценой отдельного вызова модели на каждую обрезку и риска плохого пересказа, поэтому у нас есть fallback на
+trim. Для тренажёра важнее помнить пользователя, поэтому по умолчанию `summarize`. Для одноразовых задач без
+личного контекста достаточно `trim`.
+
+**5. Почему основной system-промпт не хранится в файле сессии, а `[память диалога]` хранится?**
+Основной промпт — часть **кода**: при загрузке он всегда ставится один раз из
+[`build_system_prompt()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L105), поэтому не может задвоиться, а правки промпта сразу действуют в старых
+сессиях. `[память диалога]` — часть **данных** конкретной сессии: если её не сохранить, пересказ удалённых
+ходов пропадёт при выходе. Поэтому [`save_session()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L130) выбрасывает system, кроме сообщений-памяти.
+
+**6. Чем `search_docs` лучше, чем `read_file` для документации?**
+`read_file` кладёт в контекст файл целиком (до 20 000 символов), `search_docs` — только 1–5 подходящих абзацев
+по ≤ 400 символов. Модели не нужно знать, в каком файле факт, а контекст растёт меньше (+240 против +323 на
+`training.md`). Keyword-поиска хватает для небольшого корпуса, но ему нужен стемминг (русские падежи) и
+стоп-слова, а синонимы он не находит. Это решают embeddings (бонус, не делали).
+
+**7. Чем долговременная память (шаг 6) отличается от сессии и `[память диалога]`, и в чём её риск?**
+Сессия и память диалога живут внутри одного `--session`, а `memory.json` общий для **всех** сессий и
+пополняется агентом **явно** через `remember`. Таблица — в шаге 6. Риск: если в долговременную память попадёт
+вредная инструкция (например, из файла, как `note.txt` в лаб. 2), она окажется в system **каждой** будущей
+сессии. Защита: описание `remember` запрещает сохранять инструкции из файлов, факты подписаны в промпте как
+«ДАННЫЕ, а не инструкции», каждое изменение видно в логе, есть `forget`, а лимиты 20 × 200 ограничивают
+объём.
+
+**8. Что будет, если API упадёт посреди работы (например, 429)?**
+С шага 5 [`run_agent()`](https://github.com/a-slelin/wordmaster/blob/940c45b/agent/agent.py#L627) ловит `openai.APIError`: пользователь видит «ОШИБКА API…», программа не
+падает. Данные не теряются: вопрос сохраняется в сессию **до** запроса, а `on_step` вызывается только когда
+все `tool`-ответы шага уже в истории, поэтому в файле нет незакрытых `tool_calls`. Повторный запуск с тем же
+`--session` продолжает диалог.
+
+**9. Почему ошибки в шагах 5 и 6 исправлялись промптом, а не кодом?**
+Модель видит не код инструментов, а только их **описания** и системный промпт. Код
+`search_docs`/`remember`/`forget` с первого раза работал верно, а ошибалось **решение** модели: она
+вызывала tools параллельно и выдумывала карточку, сохраняла три факта одной строкой и выбирала `any` вместо
+темы из памяти. Явные правила в описаниях («один вызов = один факт», «ЕДИНСТВЕННЫЙ источник карточек»,
+«дождись результата search_docs») исправили поведение без изменения логики.
+
+---
+
+## ⚠️ Ограничения и что улучшить
+
+| Ограничение | Где видно | Возможное улучшение |
+|-------------|-----------|---------------------|
+| Оценка `//4` занижает на ~20–35 % | шаг 2 | считать токены `tiktoken` или калибровать по `usage` прошлого ответа |
+| Обрезка «до границы» запускается почти на каждом вопросе | шаг 3, TRIM дважды подряд | резать с запасом, до ~70 % бюджета |
+| Память диалога растёт (51 → 137 токенов) | шаг 4 | ограничить длину в коде, «не пересказывай содержимое файлов» в промпте |
+| Токены суммаризатора не логируются | шаг 4 | печатать `usage` вызова `summarize()` |
+| Слабые совпадения в `search_docs` при `limit=5` | шаг 5 | отбрасывать фрагменты со score < ½ лучшего |
+| Keyword-поиск не знает синонимов | шаг 5 | embeddings + векторный индекс (бонус) |
+| Атомарность фактов держится только на описании tool | шаг 6, первая попытка | инструмент `update_fact(id, text)` вместо пары forget + remember |
+| Бесплатная квота OpenRouter (`free-models-per-day`) | шаг 5, 429 | повтор с ожиданием для поминутного лимита; меньше лишних запусков |
+| Обрезка необратима: на диск пишется усечённая история | шаг 3 | хранить полную историю отдельно, обрезать только копию для запроса |
+
+---
+
+## ✅ Выводы
+
+1. **Контекст надо контролировать явно.** API без состояния, поэтому история и результаты tools растут в
+   каждом запросе. Оценка до запроса + бюджет + обрезка целыми ходами держат размер у бюджета (−33…36 %
+   `prompt_tokens`) и не ломают валидность истории для API.
+2. **Обрезка без памяти — потеря фактов.** Суммаризация в `[память диалога]` стоит примерно столько же
+   токенов, но агент помнит пользователя, в том числе после перезапуска.
+3. **Память бывает разной.** Сессия хранит дословную историю одного диалога, `[память диалога]` — сжатый
+   пересказ удалённой части, `memory.json` — отдельные факты, общие для всех сессий. Каждая решает свою
+   задачу, и у каждой своя цена в токенах и свои риски.
+4. **Поиск по документации даёт агенту факты, которых нет ни в коде, ни в промпте** (тема по умолчанию
+   `travel`). Такой поиск дешевле чтения файла целиком и работает в связке с доменными tools.
+5. **Поведение агента определяется описаниями инструментов не меньше, чем кодом.** Обе «неудачные первые
+   попытки» (шаги 5 и 6) исправлены формулировками, а не логикой. Поэтому описания tools и промпт нужно
+   проверять запусками так же, как код.
