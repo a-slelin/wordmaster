@@ -18,3 +18,6 @@ agent/sessions/*.json
 # Python
 __pycache__/
 *.pyc
+
+# Долговременная память агента (lab3, шаг 6): личные факты не коммитим
+agent/memory.json
