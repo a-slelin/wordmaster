@@ -19,6 +19,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -191,6 +193,25 @@ class WordMasterIntegrationTest {
     void unknownSortPropertyIsBadRequest() throws Exception {
         perform(get("/api/decks?sort=nope,desc"), null, token).andExpect(status().isBadRequest());
         perform(get("/api/decks?sort=title,desc"), null, token).andExpect(status().isOk());
+
+        String admin = read(perform(post("/api/auth/login"),
+                Map.of("usernameOrEmail", "admin", "password", "admin12345"), null)
+                .andExpect(status().isOk())).get("accessToken").asString();
+        perform(get("/api/admin/users?sort=username"), null, admin).andExpect(status().isOk());
+        perform(get("/api/admin/users?sort=passwordHash"), null, admin).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void invalidTagIdsAreBadRequest() throws Exception {
+        JsonNode languages = read(perform(get("/api/languages"), null, null).andExpect(status().isOk()));
+        Map<String, Object> deck = new HashMap<>(Map.of("title", "Tags", "sourceLanguageId", idOf(languages, "ru"),
+                "targetLanguageId", idOf(languages, "en"), "isPublic", false));
+
+        deck.put("tagIds", Arrays.asList(1L, null));
+        perform(post("/api/decks"), deck, token).andExpect(status().isBadRequest());
+
+        deck.put("tagIds", List.of(999_999L));
+        perform(post("/api/decks"), deck, token).andExpect(status().isNotFound());
     }
 
     @Test

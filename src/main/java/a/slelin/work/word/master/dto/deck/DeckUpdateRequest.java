@@ -2,6 +2,7 @@ package a.slelin.work.word.master.dto.deck;
 
 import a.slelin.work.word.master.dto.RequestDto;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
@@ -18,7 +19,7 @@ public record DeckUpdateRequest(@Size(min = 3, max = 255) String title,
                                 @Min(1) Long sourceLanguageId,
                                 @Min(1) Long targetLanguageId,
                                 Boolean isPublic,
-                                List<Long> tagIds) implements RequestDto {
+                                @Size(max = 20) List<@NotNull @Min(1) Long> tagIds) implements RequestDto {
 
     @NonNull
     @Override

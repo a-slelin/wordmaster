@@ -58,8 +58,12 @@ watch(
   { immediate: true },
 )
 
+/** The server accepts up to 20 tags per deck. */
+const MAX_TAGS = 20
+
 function toggleTag(id: number) {
-  form.tagIds = form.tagIds.includes(id) ? form.tagIds.filter((x) => x !== id) : [...form.tagIds, id]
+  if (form.tagIds.includes(id)) form.tagIds = form.tagIds.filter((x) => x !== id)
+  else if (form.tagIds.length < MAX_TAGS) form.tagIds = [...form.tagIds, id]
 }
 
 async function submit() {

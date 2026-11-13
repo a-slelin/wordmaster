@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -39,6 +40,11 @@ public class UserServiceImpl implements UserService {
      * Owner of the official starter decks (see Liquibase seed data).
      */
     public static final UUID SYSTEM_USER_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
+    /**
+     * Properties the list of users may be sorted by (anything else, e.g. the password hash, is refused).
+     */
+    private static final Set<String> SORTABLE = Set.of("username", "email", "role", "createdAt", "updatedAt");
 
     private final UserRepository userRepository;
 
@@ -85,6 +91,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public SheetResponse<UserResponse> getAll(Pageable pageable) {
+        pageable.getSort().forEach(order -> {
+            if (!SORTABLE.contains(order.getProperty())) {
+                throw new IllegalArgumentException("Users can not be sorted by '%s'.".formatted(order.getProperty()));
+            }
+        });
+
         Page<User> page = userRepository.findAll(pageable);
         return PageMapper.toSheet(page, userMapper::toDto);
     }

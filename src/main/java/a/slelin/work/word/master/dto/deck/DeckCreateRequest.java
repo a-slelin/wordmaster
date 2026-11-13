@@ -20,7 +20,7 @@ public record DeckCreateRequest(@NotBlank @Size(min = 3, max = 255) String title
                                 @NotNull @Min(1) Long sourceLanguageId,
                                 @NotNull @Min(1) Long targetLanguageId,
                                 @NotNull Boolean isPublic,
-                                List<Long> tagIds) implements RequestDto {
+                                @Size(max = 20) List<@NotNull @Min(1) Long> tagIds) implements RequestDto {
 
     @NonNull
     @Override

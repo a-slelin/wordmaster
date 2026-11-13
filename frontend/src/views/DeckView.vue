@@ -338,6 +338,11 @@ onMounted(load)
 </template>
 
 <style scoped>
+.head-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .back {
   align-self: flex-start;
   margin-bottom: -12px;

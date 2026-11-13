@@ -19,15 +19,17 @@ function get(messages: Messages, path: string): unknown {
 }
 
 describe('i18n messages', () => {
-  const i18n = createI18n({
+  // The message schema is too deep for the type checker here, and the test needs none of it.
+  const create = createI18n as unknown as (options: object) => { global: { t: (...args: unknown[]) => unknown } }
+  const i18n = create({
     legacy: false,
     locale: 'ru',
-    messages: { ru, en } as never,
+    messages: { ru, en },
     pluralRules: { ru: russianPlural },
     missingWarn: false,
     fallbackWarn: false,
   })
-  const t = i18n.global.t as (key: string, named: Record<string, unknown>, options: { locale: string }) => unknown
+  const t = i18n.global.t
 
   it('has the same keys in both languages', () => {
     expect(keys(en as Messages).sort()).toEqual(keys(ru as Messages).sort())
@@ -52,7 +54,7 @@ describe('i18n messages', () => {
   })
 
   it('declines Russian nouns', () => {
-    const cards = (n: number) => (i18n.global.t as (key: string, plural: number) => string)('common.cards', n)
+    const cards = (n: number) => t('common.cards', n)
     expect([1, 2, 5, 11, 21, 22, 25, 111].map(cards)).toEqual([
       '1 карточка', '2 карточки', '5 карточек', '11 карточек', '21 карточка', '22 карточки', '25 карточек', '111 карточек',
     ])
