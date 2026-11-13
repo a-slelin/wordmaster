@@ -26,6 +26,11 @@ public final class AnswerChecker {
 
     private static final Pattern ALTERNATIVES_SEPARATOR = Pattern.compile("[,;/]");
 
+    /**
+     * A dash surrounded by spaces separates forms of one word: "go – went – gone".
+     */
+    private static final Pattern WORD_FORMS_SEPARATOR = Pattern.compile("\\s+[–—-]\\s+");
+
     private static final Pattern BRACKETS = Pattern.compile("\\([^)]*\\)");
 
     public static Result check(String expected, String actual) {
@@ -59,24 +64,31 @@ public final class AnswerChecker {
 
     /**
      * All acceptable normalized forms of the expected answer.
+     * <ul>
+     *     <li>"big, large" / "big; large" / "big/large" - any of the alternatives or the whole string;</li>
+     *     <li>"colour (BrE)" - with or without the part in brackets;</li>
+     *     <li>"go – went – gone" (word forms separated by a spaced dash) - all forms or just the first one;</li>
+     *     <li>"to run" - with or without the leading "to".</li>
+     * </ul>
      */
     static Set<String> variants(String expected) {
-        Set<String> result = new LinkedHashSet<>();
         List<String> raw = new ArrayList<>();
-        raw.add(expected);
-        raw.add(BRACKETS.matcher(expected).replaceAll(" "));
-        raw.add(expected.replace("(", " ").replace(")", " "));
+        for (String option : List.of(
+                expected,
+                BRACKETS.matcher(expected).replaceAll(" "),
+                expected.replace("(", " ").replace(")", " "))) {
+            raw.add(option);
 
-        for (String option : List.copyOf(raw)) {
-            if (ALTERNATIVES_SEPARATOR.matcher(option).find()) {
-                for (String part : ALTERNATIVES_SEPARATOR.split(option)) {
-                    if (!part.isBlank()) {
-                        raw.add(part);
-                    }
-                }
+            String[] forms = WORD_FORMS_SEPARATOR.split(option);
+            if (forms.length > 1) {
+                // "be – was/were – been": "was" alone is not an answer, but the base form "be" is.
+                addAlternatives(raw, forms[0]);
+            } else {
+                addAlternatives(raw, option);
             }
         }
 
+        Set<String> result = new LinkedHashSet<>();
         for (String option : raw) {
             String normalized = normalize(option);
             if (!normalized.isEmpty()) {
@@ -88,6 +100,15 @@ public final class AnswerChecker {
         }
 
         return result;
+    }
+
+    private static void addAlternatives(List<String> target, String option) {
+        target.add(option);
+        for (String part : ALTERNATIVES_SEPARATOR.split(option)) {
+            if (!part.isBlank()) {
+                target.add(part);
+            }
+        }
     }
 
     static String normalize(String value) {

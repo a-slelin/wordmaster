@@ -46,4 +46,13 @@ public class DailyActivity implements BaseEntity {
     @Column(nullable = false,
             name = "xp_earned")
     private Long xpEarned;
+
+    /**
+     * Whether the daily goal (as it was on that day) has been reached.
+     */
+    @NotNull
+    @Builder.Default
+    @Column(nullable = false,
+            name = "goal_reached")
+    private Boolean goalReached = false;
 }

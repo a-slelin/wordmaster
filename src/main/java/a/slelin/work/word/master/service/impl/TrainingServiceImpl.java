@@ -123,7 +123,7 @@ public class TrainingServiceImpl implements TrainingService {
     @Transactional
     public TrainingAnswerResponse answer(Actor actor, UUID sessionId,
                                          TrainingAnswerRequest request) {
-        TrainingSession session = getSession(actor, sessionId);
+        TrainingSession session = lockSession(actor, sessionId);
         if (session.getFinishedAt() != null) {
             throw new BusinessFault("The training session is already finished.");
         }
@@ -152,7 +152,12 @@ public class TrainingServiceImpl implements TrainingService {
                         .correctCount(0L)
                         .incorrectCount(0L)
                         .build());
-        SpacedRepetition.apply(progress, grade, now);
+        if (row.getAttempts() == 0) {
+            SpacedRepetition.apply(progress, grade, now);
+        } else {
+            // The card was forgotten earlier in this session and is being drilled again.
+            SpacedRepetition.applyRelearning(progress, grade, now);
+        }
         progress = cardProgressRepository.save(progress);
 
         answerRepository.save(TrainingAnswer.builder()
@@ -198,7 +203,7 @@ public class TrainingServiceImpl implements TrainingService {
     @Override
     @Transactional
     public TrainingSessionFinishResponse finish(Actor actor, UUID sessionId) {
-        TrainingSession session = getSession(actor, sessionId);
+        TrainingSession session = lockSession(actor, sessionId);
         List<AchievementResponse> newAchievements = List.of();
 
         if (session.getFinishedAt() == null) {
@@ -224,7 +229,7 @@ public class TrainingServiceImpl implements TrainingService {
         }
 
         UserStats stats = gamificationService.getOrCreate(actor.id());
-        int todayReviewed = gamificationService.todayReviewed(actor.id());
+        int todayReviewed = gamificationService.todayReviewed(stats);
 
         return TrainingSessionFinishResponse.builder()
                 .sessionId(session.getId().toString())
@@ -244,6 +249,11 @@ public class TrainingServiceImpl implements TrainingService {
                 .todayReviewed(todayReviewed)
                 .newAchievements(newAchievements)
                 .build();
+    }
+
+    private TrainingSession lockSession(Actor actor, UUID sessionId) {
+        return sessionRepository.findForUpdate(sessionId, actor.id())
+                .orElseThrow(() -> new EntityNotFoundByIdException(TrainingSession.class, sessionId));
     }
 
     private TrainingSession getSession(Actor actor, UUID sessionId) {
@@ -330,32 +340,48 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     /**
-     * Correct answer plus up to three distractors from the same deck in random order.
+     * Correct answer plus up to three distractors in random order. Distractors are taken from the same deck;
+     * if the deck is too small - from other decks of the same language pair the user may see.
      */
     private List<String> options(TrainingSession session, Card card, String expected) {
+        Deck deck = session.getDeck();
         Set<String> seen = new HashSet<>();
-        seen.add(expected.trim().toLowerCase(Locale.ROOT));
-
-        List<Card> others = new ArrayList<>(cardRepository.findByDeckIdOrderByPositionAsc(session.getDeck().getId()));
-        Collections.shuffle(others, random);
+        seen.add(optionKey(expected));
 
         List<String> options = new ArrayList<>();
         options.add(expected);
-        for (Card other : others) {
-            if (options.size() >= CHOICE_OPTIONS) {
-                break;
-            }
-            if (other.getId().equals(card.getId())) {
-                continue;
-            }
-            String option = expectedAnswer(session, other);
-            if (seen.add(option.trim().toLowerCase(Locale.ROOT))) {
-                options.add(option);
-            }
+
+        List<Card> others = new ArrayList<>(cardRepository.findByDeckIdOrderByPositionAsc(deck.getId()));
+        others.removeIf(other -> other.getId().equals(card.getId()));
+        Collections.shuffle(others, random);
+        addOptions(options, seen, session, others);
+
+        if (options.size() < CHOICE_OPTIONS) {
+            addOptions(options, seen, session, cardRepository.findRandomFromOtherDecks(deck.getId(),
+                    deck.getSourceLanguage().getId(), deck.getTargetLanguage().getId(),
+                    session.getUser().getId(), CHOICE_OPTIONS * 5));
         }
 
         Collections.shuffle(options, random);
         return options;
+    }
+
+    private static void addOptions(List<String> options, Set<String> seen, TrainingSession session,
+                                   List<Card> candidates) {
+        for (Card candidate : candidates) {
+            if (options.size() >= CHOICE_OPTIONS) {
+                return;
+            }
+
+            String option = expectedAnswer(session, candidate);
+            if (seen.add(optionKey(option))) {
+                options.add(option);
+            }
+        }
+    }
+
+    private static String optionKey(String option) {
+        return option.trim().toLowerCase(Locale.ROOT);
     }
 
     private static String expectedAnswer(TrainingSession session, Card card) {

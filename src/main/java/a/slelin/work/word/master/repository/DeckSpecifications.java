@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -29,10 +30,15 @@ public final class DeckSpecifications {
             return null;
         }
 
-        String pattern = "%" + search.trim().toLowerCase() + "%";
+        // "%" and "_" typed by the user are searched literally.
+        String escaped = search.trim().toLowerCase(Locale.ROOT)
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        String pattern = "%" + escaped + "%";
         return (root, query, cb) -> cb.or(
-                cb.like(cb.lower(root.get("title")), pattern),
-                cb.like(cb.lower(cb.coalesce(root.get("description"), "")), pattern));
+                cb.like(cb.lower(root.get("title")), pattern, '\\'),
+                cb.like(cb.lower(cb.coalesce(root.get("description"), "")), pattern, '\\'));
     }
 
     public static Specification<Deck> targetLanguage(Long languageId) {

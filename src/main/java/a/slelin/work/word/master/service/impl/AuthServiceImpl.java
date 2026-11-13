@@ -15,6 +15,8 @@ import a.slelin.work.word.master.security.TokenService;
 import a.slelin.work.word.master.service.AuthService;
 import a.slelin.work.word.master.service.GamificationService;
 import a.slelin.work.word.master.service.UserService;
+import a.slelin.work.word.master.security.LoginAttemptLimiter;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +58,18 @@ public class AuthServiceImpl implements AuthService {
 
     private final Clock clock;
 
+    private final LoginAttemptLimiter loginAttemptLimiter;
+
+    /**
+     * Hash of a random password nobody knows (see {@link #login}).
+     */
+    private String unknownUserHash;
+
+    @PostConstruct
+    void init() {
+        unknownUserHash = passwordEncoder.encode(UUID.randomUUID().toString());
+    }
+
     @Override
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -69,13 +83,19 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         String login = request.usernameOrEmail().trim();
-        User user = userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(login, login)
-                .orElseThrow(() -> new BadCredentialsException("Invalid username/email or password."));
+        loginAttemptLimiter.check(login);
 
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+        User user = userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(login, login).orElse(null);
+        // The hash is checked even for an unknown login, so the response time does not reveal existing accounts.
+        String hash = user == null ? unknownUserHash : user.getPasswordHash();
+        boolean matches = passwordEncoder.matches(request.password(), hash);
+
+        if (user == null || !matches) {
+            loginAttemptLimiter.failed(login);
             throw new BadCredentialsException("Invalid username/email or password.");
         }
 
+        loginAttemptLimiter.succeeded(login);
         return issueTokens(user);
     }
 

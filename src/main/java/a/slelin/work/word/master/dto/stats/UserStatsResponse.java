@@ -3,6 +3,7 @@ package a.slelin.work.word.master.dto.stats;
 import a.slelin.work.word.master.dto.ResponseDto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.NonNull;
@@ -30,7 +31,8 @@ public record UserStatsResponse(@NotNull @Min(0) Long totalDecks,
                                 @NotNull @Min(0) Integer dailyGoal,
                                 @NotNull @Min(0) Integer todayReviewed,
                                 @NotNull @Min(0) Integer achievementsUnlocked,
-                                @NotNull @Min(0) Integer achievementsTotal) implements ResponseDto {
+                                @NotNull @Min(0) Integer achievementsTotal,
+                                @NotBlank String timeZone) implements ResponseDto {
 
     @NonNull
     @Override

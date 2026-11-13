@@ -7,7 +7,12 @@ import a.slelin.work.word.master.exception.BusinessFault;
 import a.slelin.work.word.master.exception.DuplicateResourceException;
 import a.slelin.work.word.master.exception.EntityNotFoundByPropertyException;
 import jakarta.validation.ConstraintViolationException;
+import a.slelin.work.word.master.exception.TooManyRequestsException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -93,6 +98,40 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException.class, IllegalArgumentException.class})
     public ResponseEntity<ErrorResponse> handleBadRequest(Exception e, ServletWebRequest request) {
         return build(HttpStatus.BAD_REQUEST, e, request, "Malformed request.", null);
+    }
+
+    /**
+     * Unknown property in "sort" request parameter.
+     */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handleUnknownProperty(PropertyReferenceException e, ServletWebRequest request) {
+        return build(HttpStatus.BAD_REQUEST, e, request,
+                "Unknown property '%s'.".formatted(e.getPropertyName()), null);
+    }
+
+    /**
+     * A database constraint is violated: usually two parallel requests create the same unique value
+     * or the request refers to something that has just been deleted.
+     */
+    @ExceptionHandler({DataIntegrityViolationException.class, ConcurrencyFailureException.class})
+    public ResponseEntity<ErrorResponse> handleConflict(Exception e, ServletWebRequest request) {
+        log.warn("Conflict on {} {}: {}", request.getHttpMethod(), request.getRequest().getRequestURI(),
+                e.getMessage());
+        ErrorResponse body = ErrorResponse.buildDefault(e, request)
+                .path(request.getRequest().getRequestURI())
+                .httpStatus(HttpStatus.CONFLICT)
+                .message("The request conflicts with the current state of data. Please try again.")
+                .build();
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyRequestsException e, ServletWebRequest request) {
+        ResponseEntity<ErrorResponse> response = build(HttpStatus.TOO_MANY_REQUESTS, e, request,
+                Map.of("retryAfterSeconds", e.getRetryAfterSeconds()));
+        return ResponseEntity.status(response.getStatusCode())
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(e.getRetryAfterSeconds()))
+                .body(response.getBody());
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

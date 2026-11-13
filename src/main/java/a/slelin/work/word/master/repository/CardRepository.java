@@ -90,6 +90,26 @@ public interface CardRepository extends JpaRepository<Card, UUID> {
     long countByDeck_IsOfficialTrue();
 
     /**
+     * Random cards of other decks with the same language pair: own decks of the user and official ones.
+     * Used as wrong options in the "choice" mode when the deck itself has too few cards.
+     */
+    @Query(value = """
+            select c.* from card c
+            join deck d on d.id = c.deck_id
+            where d.id <> :deckId
+              and d.source_language_id = :sourceLanguageId
+              and d.target_language_id = :targetLanguageId
+              and (d.owner_id = :userId or d.is_official)
+            order by random()
+            limit :limit
+            """, nativeQuery = true)
+    List<Card> findRandomFromOtherDecks(@Param("deckId") UUID deckId,
+                                        @Param("sourceLanguageId") Long sourceLanguageId,
+                                        @Param("targetLanguageId") Long targetLanguageId,
+                                        @Param("userId") UUID userId,
+                                        @Param("limit") int limit);
+
+    /**
      * Progress, answers and session plan rows are removed by "ON DELETE CASCADE" in the database.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)

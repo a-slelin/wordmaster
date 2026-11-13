@@ -130,4 +130,43 @@ class GamificationServiceImplTest {
         assertEquals(10, second.xpGained());
         assertEquals(6, activity.getCardsReviewed());
     }
+
+    @Test
+    void changingGoalAfterReachingItDoesNotGiveSecondBonus() {
+        stats.setDailyGoal(5);
+        DailyActivity activity = DailyActivity.builder()
+                .userId(USER).activityDate(TODAY).cardsReviewed(4).xpEarned(40L).build();
+        when(dailyActivityRepository.findById(any())).thenReturn(Optional.of(activity));
+
+        assertTrue(service.registerActivity(USER, 1, 10).goalReached());
+        assertTrue(activity.getGoalReached());
+
+        service.updateSettings(USER, 7, null);
+        service.registerActivity(USER, 1, 10);
+        assertFalse(service.registerActivity(USER, 1, 10).goalReached());
+    }
+
+    @Test
+    void dayIsCountedInTimeZoneOfUser() {
+        // 12:00 in Moscow is 18:00 of the same day in Tokyo and 23:00 of the previous day in Honolulu.
+        service.updateSettings(USER, null, "Pacific/Honolulu");
+        assertEquals(TODAY.minusDays(1), service.today(stats));
+
+        service.registerActivity(USER, 1, 10);
+        assertEquals(TODAY.minusDays(1), stats.getLastActiveDate());
+
+        service.updateSettings(USER, null, "Asia/Tokyo");
+        assertEquals(TODAY, service.today(stats));
+        service.registerActivity(USER, 1, 10);
+        assertEquals(2, stats.getCurrentStreak());
+    }
+
+    @Test
+    void unknownTimeZoneFallsBackToApplicationZone() {
+        stats.setTimeZone("Mars/Olympus");
+
+        assertEquals(ZONE, service.zoneOf(stats));
+        service.registerActivity(USER, 1, 10);
+        assertEquals(TODAY, stats.getLastActiveDate());
+    }
 }

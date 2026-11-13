@@ -53,6 +53,7 @@ public interface CardProgressRepository extends JpaRepository<CardProgress, UUID
             join fetch p.card c
             join fetch c.deck d
             where p.user.id = :userId
+              and (d.isPublic = true or d.owner.id = :userId)
               and p.incorrectCount > 0
             order by (p.incorrectCount * 1.0 / (p.correctCount + p.incorrectCount)) desc, p.incorrectCount desc
             """)
@@ -64,6 +65,7 @@ public interface CardProgressRepository extends JpaRepository<CardProgress, UUID
             join fetch c.deck d
             where p.user.id = :userId
               and d.id = :deckId
+              and (d.isPublic = true or d.owner.id = :userId)
               and p.incorrectCount > 0
             order by (p.incorrectCount * 1.0 / (p.correctCount + p.incorrectCount)) desc, p.incorrectCount desc
             """)
@@ -71,14 +73,8 @@ public interface CardProgressRepository extends JpaRepository<CardProgress, UUID
                                          Pageable pageable);
 
     /**
-     * Number of reviews per day in [from, to) for the review forecast.
+     * Planned review times before the given moment (for the review forecast).
      */
-    @Query(value = """
-            select cast(next_review_at as date) as day, count(*) as cnt
-            from card_progress
-            where user_id = :userId and next_review_at < :to
-            group by cast(next_review_at as date)
-            order by day
-            """, nativeQuery = true)
-    List<Object[]> forecast(@Param("userId") UUID userId, @Param("to") LocalDateTime to);
+    @Query("select p.nextReviewAt from CardProgress p where p.user.id = :userId and p.nextReviewAt < :to")
+    List<LocalDateTime> findReviewTimesBefore(@Param("userId") UUID userId, @Param("to") LocalDateTime to);
 }

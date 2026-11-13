@@ -49,11 +49,11 @@ public class UserController {
     }
 
     @PutMapping("/me/settings")
-    @Operation(summary = "Change learning settings (daily goal)")
+    @Operation(summary = "Change learning settings (daily goal, time zone)")
     public UserStatsResponse updateSettings(@AuthenticationPrincipal Jwt jwt,
                                             @RequestBody @Valid UserSettingsRequest request) {
         UUID userId = CurrentUser.id(jwt);
-        gamificationService.updateDailyGoal(userId, request.dailyGoal());
+        gamificationService.updateSettings(userId, request.dailyGoal(), request.timeZone());
         return statsService.getOverview(userId);
     }
 

@@ -2,22 +2,27 @@ package a.slelin.work.word.master;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,11 +30,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Full application on a real PostgreSQL: migrations, seed data, security and the main user flow.
+ * Full application on a real PostgreSQL: migrations, seed data, security and the main user flows.
+ * <p>
+ * The database is started in Docker by Testcontainers. Without Docker an existing PostgreSQL can be used:
+ * set {@code TEST_DB_URL} (and optionally {@code TEST_DB_USER}, {@code TEST_DB_PASSWORD}) - <b>its schema
+ * is dropped and created again</b>. With neither Docker nor {@code TEST_DB_URL} the test is skipped.
  */
-@Testcontainers(disabledWithoutDocker = true)
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
+@EnabledIf("databaseAvailable")
 @SpringBootTest(properties = {
         "wordmaster.admin.username=admin",
         "wordmaster.admin.email=admin@test.io",
@@ -40,9 +49,37 @@ class WordMasterIntegrationTest {
 
     private static final String STARTER_DECK = "00000000-0000-0000-0000-000000000101";
 
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17-alpine");
+    private static final String EXTERNAL_DB_URL = System.getenv("TEST_DB_URL");
+
+    private static PostgreSQLContainer postgres;
+
+    static boolean databaseAvailable() {
+        return EXTERNAL_DB_URL != null || DockerClientFactory.instance().isDockerAvailable();
+    }
+
+    @DynamicPropertySource
+    static void dataSource(DynamicPropertyRegistry registry) {
+        if (EXTERNAL_DB_URL != null) {
+            registry.add("spring.datasource.url", () -> EXTERNAL_DB_URL);
+            registry.add("spring.datasource.username", () -> env("TEST_DB_USER", "word_master_user"));
+            registry.add("spring.datasource.password", () -> env("TEST_DB_PASSWORD", "password"));
+            registry.add("spring.liquibase.drop-first", () -> "true");
+            return;
+        }
+
+        if (postgres == null) {
+            postgres = new PostgreSQLContainer("postgres:17-alpine");
+            postgres.start();
+        }
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
+
+    private static String env(String name, String defaultValue) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? defaultValue : value;
+    }
 
     @Autowired
     private MockMvc mvc;
@@ -52,15 +89,21 @@ class WordMasterIntegrationTest {
 
     private String token;
 
+    private String username;
+
+    private String refreshToken;
+
     @BeforeEach
     void register() throws Exception {
         String name = "u" + UUID.randomUUID().toString().substring(0, 8);
+        username = name;
         JsonNode auth = perform(post("/api/auth/register"),
                 Map.of("username", name, "email", name + "@test.io", "password", "secret123"), null)
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString().transform(json::readTree);
         token = auth.get("accessToken").asString();
-        assertNotNull(auth.get("refreshToken").asString());
+        refreshToken = auth.get("refreshToken").asString();
+        assertNotNull(refreshToken);
     }
 
     @Test
@@ -142,6 +185,214 @@ class WordMasterIntegrationTest {
         perform(delete("/api/decks/" + STARTER_DECK), null, token).andExpect(status().isForbidden());
         perform(patch("/api/decks/" + copy.get("newDeckId").asString()), Map.of("title", "My verbs"), token)
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void unknownSortPropertyIsBadRequest() throws Exception {
+        perform(get("/api/decks?sort=nope,desc"), null, token).andExpect(status().isBadRequest());
+        perform(get("/api/decks?sort=title,desc"), null, token).andExpect(status().isOk());
+    }
+
+    @Test
+    void searchTreatsWildcardsLiterally() throws Exception {
+        JsonNode all = read(perform(get("/api/decks/public?search=глаголы"), null, null).andExpect(status().isOk()));
+        assertTrue(all.get("page").get("totalElements").asInt() >= 2);
+
+        JsonNode wildcard = read(perform(get("/api/decks/public?search=%25"), null, null).andExpect(status().isOk()));
+        assertEquals(0, wildcard.get("page").get("totalElements").asInt());
+    }
+
+    @Test
+    void tokenOfDeletedAccountIsRejected() throws Exception {
+        perform(delete("/api/users/me"), null, token).andExpect(status().isNoContent());
+
+        perform(get("/api/users/me"), null, token).andExpect(status().isUnauthorized());
+        perform(post("/api/auth/refresh"), Map.of("refreshToken", refreshToken), null)
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refreshTokenIsRotatedAndPasswordChangeRevokesSessions() throws Exception {
+        JsonNode refreshed = read(perform(post("/api/auth/refresh"), Map.of("refreshToken", refreshToken), null)
+                .andExpect(status().isOk()));
+        String second = refreshed.get("refreshToken").asString();
+        assertNotEquals(refreshToken, second);
+        perform(post("/api/auth/refresh"), Map.of("refreshToken", refreshToken), null)
+                .andExpect(status().isUnauthorized());
+
+        perform(put("/api/users/me/password"), Map.of("oldPassword", "wrong-one", "newPassword", "secret456"), token)
+                .andExpect(status().isUnprocessableContent());
+        perform(put("/api/users/me/password"), Map.of("oldPassword", "secret123", "newPassword", "secret456"), token)
+                .andExpect(status().isNoContent());
+
+        perform(post("/api/auth/refresh"), Map.of("refreshToken", second), null)
+                .andExpect(status().isUnauthorized());
+        perform(post("/api/auth/login"), Map.of("usernameOrEmail", username, "password", "secret123"), null)
+                .andExpect(status().isUnauthorized());
+        perform(post("/api/auth/login"),
+                Map.of("usernameOrEmail", username.toUpperCase() + "@TEST.IO", "password", "secret456"), null)
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void tooManyFailedLoginsAreBlocked() throws Exception {
+        Map<String, String> wrong = Map.of("usernameOrEmail", username, "password", "not-my-password");
+        for (int i = 0; i < 10; i++) {
+            perform(post("/api/auth/login"), wrong, null).andExpect(status().isUnauthorized());
+        }
+
+        perform(post("/api/auth/login"), wrong, null).andExpect(status().isTooManyRequests());
+        // Even the right password does not help until the block expires.
+        perform(post("/api/auth/login"), Map.of("usernameOrEmail", username, "password", "secret123"), null)
+                .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void duplicateAccountIsConflict() throws Exception {
+        perform(post("/api/auth/register"), Map.of("username", username.toUpperCase(),
+                "email", "other-" + username + "@test.io", "password", "secret123"), null)
+                .andExpect(status().isConflict());
+        perform(post("/api/auth/register"), Map.of("username", username + "2",
+                "email", username.toUpperCase() + "@TEST.IO", "password", "secret123"), null)
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void settingsKeepTimeZoneAndDailyGoal() throws Exception {
+        JsonNode updated = read(perform(put("/api/users/me/settings"),
+                Map.of("timeZone", "Asia/Tokyo"), token).andExpect(status().isOk()));
+        assertEquals("Asia/Tokyo", updated.get("timeZone").asString());
+        assertEquals(20, updated.get("dailyGoal").asInt());
+
+        updated = read(perform(put("/api/users/me/settings"), Map.of("dailyGoal", 5), token)
+                .andExpect(status().isOk()));
+        assertEquals("Asia/Tokyo", updated.get("timeZone").asString());
+        assertEquals(5, updated.get("dailyGoal").asInt());
+
+        perform(put("/api/users/me/settings"), Map.of("timeZone", "Mars/Olympus"), token)
+                .andExpect(status().isBadRequest());
+        perform(put("/api/users/me/settings"), Map.of("dailyGoal", 1), token)
+                .andExpect(status().isBadRequest());
+
+        JsonNode forecast = read(perform(get("/api/stats/forecast?days=7"), null, token).andExpect(status().isOk()));
+        assertEquals(7, forecast.size());
+    }
+
+    @Test
+    void forgottenCardIsDrilledAgainWithoutExtraPenalty() throws Exception {
+        String deckId = createDeck("Animals", Map.of("cat", "кошка"));
+
+        JsonNode session = read(perform(post("/api/training/sessions"),
+                Map.of("deckId", deckId, "mode", "flashcards"), token).andExpect(status().isCreated()));
+        String sessionId = session.get("sessionId").asString();
+        String cardId = session.get("firstCard").get("cardId").asString();
+        assertEquals("кошка", session.get("firstCard").get("answer").asString());
+
+        JsonNode first = answer(sessionId, Map.of("cardId", cardId, "grade", "again"));
+        assertFalse(first.get("correct").asBoolean());
+        assertFalse(first.get("finished").asBoolean());
+        double easeAfterMiss = first.get("updatedProgress").get("easeFactor").asDouble();
+        assertTrue(easeAfterMiss < 2.5);
+
+        JsonNode second = answer(sessionId, Map.of("cardId", cardId, "grade", "again"));
+        assertEquals(easeAfterMiss, second.get("updatedProgress").get("easeFactor").asDouble());
+
+        JsonNode third = answer(sessionId, Map.of("cardId", cardId, "grade", "good"));
+        assertTrue(third.get("finished").asBoolean());
+        assertEquals(easeAfterMiss, third.get("updatedProgress").get("easeFactor").asDouble());
+        assertEquals("learning", third.get("updatedProgress").get("status").asString());
+        assertEquals(1, third.get("updatedProgress").get("intervalDays").asInt());
+
+        // The card is done: one more answer is rejected.
+        perform(post("/api/training/sessions/" + sessionId + "/answers"),
+                Map.of("cardId", cardId, "grade", "good"), token).andExpect(status().isUnprocessableContent());
+
+        JsonNode finish = read(perform(post("/api/training/sessions/" + sessionId + "/finish"), null, token)
+                .andExpect(status().isOk()));
+        assertEquals(0.0, finish.get("accuracyPercent").asDouble());
+        assertEquals(3, finish.get("answersTotal").asInt());
+
+        JsonNode hard = read(perform(get("/api/stats/hard-words"), null, token).andExpect(status().isOk()));
+        assertEquals("cat", hard.get(0).get("word").asString());
+    }
+
+    @Test
+    void choiceModeAlwaysOffersFourOptions() throws Exception {
+        // One card only: the wrong options come from other decks of the same language pair.
+        String deckId = createDeck("Tiny", Map.of("dog", "собака"));
+
+        JsonNode session = read(perform(post("/api/training/sessions"),
+                Map.of("deckId", deckId, "mode", "choice"), token).andExpect(status().isCreated()));
+        JsonNode options = session.get("firstCard").get("options");
+        assertEquals(4, options.size());
+
+        Set<String> unique = new HashSet<>();
+        options.forEach(option -> unique.add(option.asString()));
+        assertEquals(4, unique.size());
+        assertTrue(unique.contains("собака"));
+
+        JsonNode result = answer(session.get("sessionId").asString(),
+                Map.of("cardId", session.get("firstCard").get("cardId").asString(), "answer", "собака"));
+        assertTrue(result.get("correct").asBoolean());
+    }
+
+    @Test
+    void typingAcceptsBaseFormOfIrregularVerb() throws Exception {
+        String deckId = createDeck("Verbs", Map.of("go – went – gone", "идти"));
+
+        JsonNode session = read(perform(post("/api/training/sessions"),
+                Map.of("deckId", deckId, "mode", "typing", "direction", "reverse"), token)
+                .andExpect(status().isCreated()));
+        assertEquals("идти", session.get("firstCard").get("prompt").asString());
+
+        JsonNode result = answer(session.get("sessionId").asString(),
+                Map.of("cardId", session.get("firstCard").get("cardId").asString(), "answer", "Go"));
+        assertTrue(result.get("correct").asBoolean());
+        assertEquals("good", result.get("grade").asString());
+    }
+
+    @Test
+    void privateDeckIsInvisibleForOthers() throws Exception {
+        String deckId = createDeck("Secret", Map.of("key", "ключ"));
+        String stranger = registerAnother();
+
+        perform(get("/api/decks/" + deckId), null, stranger).andExpect(status().isNotFound());
+        perform(get("/api/decks/" + deckId + "/cards"), null, stranger).andExpect(status().isNotFound());
+        perform(post("/api/decks/" + deckId + "/copy"), null, stranger).andExpect(status().isNotFound());
+        perform(post("/api/training/sessions"), Map.of("deckId", deckId), stranger).andExpect(status().isNotFound());
+        perform(get("/api/decks/public/" + deckId + "/cards"), null, null).andExpect(status().isNotFound());
+
+        perform(patch("/api/decks/" + deckId), Map.of("isPublic", true), token).andExpect(status().isOk());
+        perform(get("/api/decks/" + deckId), null, stranger).andExpect(status().isOk());
+        perform(patch("/api/decks/" + deckId), Map.of("title", "Hacked"), stranger).andExpect(status().isForbidden());
+        perform(post("/api/decks/" + deckId + "/cards"), Map.of("word", "x", "translation", "y"), stranger)
+                .andExpect(status().isForbidden());
+    }
+
+    private String createDeck(String title, Map<String, String> words) throws Exception {
+        JsonNode languages = read(perform(get("/api/languages"), null, null).andExpect(status().isOk()));
+        JsonNode deck = read(perform(post("/api/decks"), Map.of("title", title,
+                "sourceLanguageId", idOf(languages, "ru"), "targetLanguageId", idOf(languages, "en"),
+                "isPublic", false), token).andExpect(status().isCreated()));
+        String deckId = deck.get("id").asString();
+
+        List<Map<String, String>> cards = new ArrayList<>();
+        words.forEach((word, translation) -> cards.add(Map.of("word", word, "translation", translation)));
+        perform(post("/api/decks/" + deckId + "/cards/bulk"), Map.of("cards", cards), token)
+                .andExpect(status().isCreated());
+        return deckId;
+    }
+
+    private JsonNode answer(String sessionId, Map<String, String> body) throws Exception {
+        return read(perform(post("/api/training/sessions/" + sessionId + "/answers"), body, token)
+                .andExpect(status().isOk()));
+    }
+
+    private String registerAnother() throws Exception {
+        String name = "s" + UUID.randomUUID().toString().substring(0, 8);
+        return read(perform(post("/api/auth/register"),
+                Map.of("username", name, "email", name + "@test.io", "password", "secret123"), null)
+                .andExpect(status().isCreated())).get("accessToken").asString();
     }
 
     private ResultActions perform(MockHttpServletRequestBuilder request, Object body, String bearer) throws Exception {

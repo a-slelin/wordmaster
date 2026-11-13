@@ -1,39 +1,40 @@
 package a.slelin.work.word.master.dto.user;
 
 import a.slelin.work.word.master.dto.RequestDto;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
-import lombok.NonNull;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 
+/**
+ * Learning settings; a {@code null} field is left unchanged.
+ */
 @Builder
-public record UserSettingsRequest(@NotNull @Min(5) @Max(500) Integer dailyGoal) implements RequestDto {
+public record UserSettingsRequest(@Schema(description = "Cards to review per day", example = "20")
+                                  @Min(5) @Max(500) Integer dailyGoal,
+                                  @Schema(description = "IANA time zone of the user: days, streaks and the "
+                                          + "daily goal are counted in it", example = "Europe/Berlin")
+                                  @Size(max = 64) String timeZone) implements RequestDto {
 
-    @NonNull
-    @Override
-    public String toString() {
-        List<String> parts = new ArrayList<>();
-        parts.add("dailyGoal = " + dailyGoal);
-        return "UserSettingsRequest: [" + String.join(", ", parts) + "]";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
+    @JsonIgnore
+    @Schema(hidden = true)
+    @AssertTrue(message = "must be a valid IANA time zone, e.g. Europe/Berlin")
+    public boolean isTimeZoneValid() {
+        if (timeZone == null) {
+            return true;
         }
 
-        UserSettingsRequest that = (UserSettingsRequest) o;
-        return Objects.equals(dailyGoal, that.dailyGoal);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(dailyGoal);
+        try {
+            ZoneId.of(timeZone);
+            return true;
+        } catch (DateTimeException e) {
+            return false;
+        }
     }
 }

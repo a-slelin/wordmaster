@@ -1,11 +1,11 @@
 package a.slelin.work.word.master.security;
 
-import a.slelin.work.word.master.config.SecurityConfig;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -18,12 +18,17 @@ public final class CurrentUser {
         return jwt == null ? null : UUID.fromString(jwt.getSubject());
     }
 
+    /**
+     * The role is taken from the security context ({@link UserJwtAuthenticationConverter} reads the current one
+     * from the database), not from the token: the claims may be outdated.
+     */
     public static boolean isAdmin(Jwt jwt) {
         if (jwt == null) {
             return false;
         }
 
-        List<String> roles = jwt.getClaimAsStringList(SecurityConfig.ROLES_CLAIM);
-        return roles != null && roles.contains("ADMIN");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> (UserJwtAuthenticationConverter.ROLE_PREFIX + "ADMIN").equals(a.getAuthority()));
     }
 }

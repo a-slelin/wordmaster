@@ -2,9 +2,12 @@ package a.slelin.work.word.master.service;
 
 import a.slelin.work.word.master.dto.stats.AchievementResponse;
 import a.slelin.work.word.master.entity.UserStats;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,7 +33,7 @@ public interface GamificationService {
      */
     int effectiveStreak(@NotNull UserStats stats);
 
-    int todayReviewed(@NotNull UUID userId);
+    int todayReviewed(@NotNull UserStats stats);
 
     /**
      * Unlocks achievements whose goals are reached and returns the newly unlocked ones.
@@ -41,5 +44,20 @@ public interface GamificationService {
     @NotNull
     List<AchievementResponse> getAchievements(@NotNull UUID userId);
 
-    void updateDailyGoal(@NotNull UUID userId, @Min(5) int dailyGoal);
+    /**
+     * Changes learning settings; {@code null} values are left as they are.
+     */
+    void updateSettings(@NotNull UUID userId, @Min(5) @Max(500) Integer dailyGoal, String timeZone);
+
+    /**
+     * Time zone the days of the user are counted in (application default if the user has none).
+     */
+    @NotNull
+    ZoneId zoneOf(@NotNull UserStats stats);
+
+    /**
+     * Current date in the time zone of the user.
+     */
+    @NotNull
+    LocalDate today(@NotNull UserStats stats);
 }

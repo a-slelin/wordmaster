@@ -36,6 +36,8 @@ public final class SpacedRepetition {
 
     public static final int MAX_INTERVAL_DAYS = 365;
 
+    public static final int RELEARNED_INTERVAL_DAYS = 1;
+
     public static int quality(Grade grade) {
         return switch (grade) {
             case AGAIN -> 1;
@@ -47,6 +49,32 @@ public final class SpacedRepetition {
 
     public static boolean isCorrect(Grade grade) {
         return grade != Grade.AGAIN;
+    }
+
+    /**
+     * Applies a repeated answer to a card that was already forgotten earlier in the same training session.
+     * <p>
+     * The first answer of the session has already been scheduled by {@link #apply}: the ease factor got its
+     * penalty and the repetitions were reset. Drilling the card until it sticks must not punish it again and
+     * must not count as a real successful review either - so a correct answer only moves the card to tomorrow.
+     */
+    public static CardProgress applyRelearning(CardProgress progress, Grade grade, LocalDateTime now) {
+        progress.setStatus(Status.LEARNING);
+        progress.setLastReviewedAt(now);
+
+        if (grade == Grade.AGAIN) {
+            progress.setRepetitions(0L);
+            progress.setIntervalDays(0);
+            progress.setIncorrectCount(progress.getIncorrectCount() + 1);
+            progress.setNextReviewAt(now.plusMinutes(RELEARN_DELAY_MINUTES));
+            return progress;
+        }
+
+        progress.setRepetitions(1L);
+        progress.setIntervalDays(RELEARNED_INTERVAL_DAYS);
+        progress.setCorrectCount(progress.getCorrectCount() + 1);
+        progress.setNextReviewAt(now.plusDays(RELEARNED_INTERVAL_DAYS));
+        return progress;
     }
 
     /**

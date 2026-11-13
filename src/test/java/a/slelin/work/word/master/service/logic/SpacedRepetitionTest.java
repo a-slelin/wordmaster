@@ -99,4 +99,38 @@ class SpacedRepetitionTest {
 
         assertEquals(SpacedRepetition.MAX_INTERVAL_DAYS, progress.getIntervalDays());
     }
+
+    @Test
+    @DisplayName("A card forgotten in a session is drilled without a second ease penalty")
+    void relearningDoesNotPunishTwice() {
+        CardProgress progress = fresh();
+        SpacedRepetition.apply(progress, Grade.AGAIN, NOW);
+        double ease = progress.getEaseFactor();
+
+        SpacedRepetition.applyRelearning(progress, Grade.AGAIN, NOW.plusMinutes(1));
+        assertEquals(ease, progress.getEaseFactor());
+        assertEquals(2, progress.getIncorrectCount());
+        assertEquals(NOW.plusMinutes(1 + SpacedRepetition.RELEARN_DELAY_MINUTES), progress.getNextReviewAt());
+
+        SpacedRepetition.applyRelearning(progress, Grade.EASY, NOW.plusMinutes(2));
+        assertEquals(ease, progress.getEaseFactor());
+        assertEquals(Status.LEARNING, progress.getStatus());
+        assertEquals(1, progress.getRepetitions());
+        assertEquals(1, progress.getIntervalDays());
+        assertEquals(NOW.plusMinutes(2).plusDays(1), progress.getNextReviewAt());
+    }
+
+    @Test
+    @DisplayName("A known card that was forgotten and drilled is not known anymore")
+    void relearningDropsKnownStatus() {
+        CardProgress progress = fresh();
+        for (int i = 0; i < 3; i++) {
+            SpacedRepetition.apply(progress, Grade.GOOD, NOW);
+        }
+        assertEquals(Status.KNOWN, progress.getStatus());
+
+        SpacedRepetition.apply(progress, Grade.AGAIN, NOW);
+        SpacedRepetition.applyRelearning(progress, Grade.GOOD, NOW);
+        assertEquals(Status.LEARNING, progress.getStatus());
+    }
 }

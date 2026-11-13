@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -59,6 +60,14 @@ public class UserStats implements BaseEntity {
     @Column(nullable = false,
             name = "daily_goal")
     private Integer dailyGoal;
+
+    /**
+     * IANA time zone of the user ("Europe/Berlin"), {@code null} - the default zone of the application.
+     */
+    @Size(max = 64)
+    @Column(name = "time_zone",
+            length = 64)
+    private String timeZone;
 
     public static UserStats empty(UUID userId) {
         return UserStats.builder()

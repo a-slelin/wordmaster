@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -49,8 +51,8 @@ public class GamificationServiceImpl implements GamificationService {
     @Override
     @Transactional
     public ActivityResult registerActivity(UUID userId, int cardsReviewed, long xp) {
-        LocalDate today = LocalDate.now(clock);
         UserStats stats = getOrCreate(userId);
+        LocalDate today = today(stats);
 
         boolean streakExtended = false;
         if (!today.equals(stats.getLastActiveDate())) {
@@ -72,9 +74,13 @@ public class GamificationServiceImpl implements GamificationService {
 
         int before = activity.getCardsReviewed();
         int after = before + cardsReviewed;
-        boolean goalReached = before < stats.getDailyGoal() && after >= stats.getDailyGoal();
+        // The flag (not "before < goal") guards the bonus: the goal can be changed in the middle of the day.
+        boolean goalReached = !Boolean.TRUE.equals(activity.getGoalReached()) && after >= stats.getDailyGoal();
         long gained = xp + (goalReached ? Levels.DAILY_GOAL_BONUS : 0);
 
+        if (goalReached) {
+            activity.setGoalReached(true);
+        }
         activity.setCardsReviewed(after);
         activity.setXpEarned(activity.getXpEarned() + gained);
         dailyActivityRepository.save(activity);
@@ -90,15 +96,34 @@ public class GamificationServiceImpl implements GamificationService {
             return 0;
         }
 
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = today(stats);
         return last.equals(today) || last.equals(today.minusDays(1)) ? stats.getCurrentStreak() : 0;
     }
 
     @Override
-    public int todayReviewed(UUID userId) {
-        return dailyActivityRepository.findById(new DailyActivityId(userId, LocalDate.now(clock)))
+    public int todayReviewed(UserStats stats) {
+        return dailyActivityRepository.findById(new DailyActivityId(stats.getUserId(), today(stats)))
                 .map(DailyActivity::getCardsReviewed)
                 .orElse(0);
+    }
+
+    @Override
+    public ZoneId zoneOf(UserStats stats) {
+        String zone = stats.getTimeZone();
+        if (zone != null && !zone.isBlank()) {
+            try {
+                return ZoneId.of(zone);
+            } catch (DateTimeException e) {
+                // A zone removed from the time zone database - fall back to the application default.
+            }
+        }
+
+        return clock.getZone();
+    }
+
+    @Override
+    public LocalDate today(UserStats stats) {
+        return LocalDate.now(clock.withZone(zoneOf(stats)));
     }
 
     @Override
@@ -145,8 +170,14 @@ public class GamificationServiceImpl implements GamificationService {
 
     @Override
     @Transactional
-    public void updateDailyGoal(UUID userId, int dailyGoal) {
-        getOrCreate(userId).setDailyGoal(dailyGoal);
+    public void updateSettings(UUID userId, Integer dailyGoal, String timeZone) {
+        UserStats stats = getOrCreate(userId);
+        if (dailyGoal != null) {
+            stats.setDailyGoal(dailyGoal);
+        }
+        if (timeZone != null && !timeZone.isBlank()) {
+            stats.setTimeZone(ZoneId.of(timeZone.trim()).getId());
+        }
     }
 
     private Set<Achievement> unlockedCodes(UUID userId) {
@@ -191,19 +222,29 @@ public class GamificationServiceImpl implements GamificationService {
                 case PUBLIC_DECKS -> deckRepository.countByOwner_IdAndIsPublicTrue(userId);
                 case LIKES_GIVEN -> deckLikesRepository.countByUser(userId);
                 case KNOWN_WORDS -> cardProgressRepository.countByUser_IdAndStatus(userId, Status.KNOWN);
-                case STREAK -> userStatsRepository.findById(userId).map(UserStats::getLongestStreak).orElse(0);
+                case STREAK -> stats().map(UserStats::getLongestStreak).orElse(0);
                 case PERFECT_SESSIONS -> trainingSessionRepository
                         .countPerfectSessions(userId, Levels.PERFECT_SESSION_MIN_CARDS);
-                case ANSWERS_TODAY -> todayReviewed(userId);
-                case GOALS_COMPLETED -> dailyActivityRepository.countGoalsCompleted(userId,
-                        userStatsRepository.findById(userId).map(UserStats::getDailyGoal)
-                                .orElse(UserStats.DEFAULT_DAILY_GOAL));
-                case NIGHT_SESSIONS -> trainingSessionRepository.countFinishedBetweenHours(userId, 23, 24)
-                        + trainingSessionRepository.countFinishedBetweenHours(userId, 0, 5);
-                case MORNING_SESSIONS -> trainingSessionRepository.countFinishedBetweenHours(userId, 5, 8);
+                case ANSWERS_TODAY -> stats().map(GamificationServiceImpl.this::todayReviewed).orElse(0);
+                case GOALS_COMPLETED -> dailyActivityRepository.countByUserIdAndGoalReachedTrue(userId);
+                case NIGHT_SESSIONS -> finishedBetweenHours(23, 24) + finishedBetweenHours(0, 5);
+                case MORNING_SESSIONS -> finishedBetweenHours(5, 8);
                 case LANGUAGES -> trainingSessionRepository.countTrainedLanguages(userId);
-                case LEVEL -> Levels.level(userStatsRepository.findById(userId).map(UserStats::getXp).orElse(0L));
+                case LEVEL -> Levels.level(stats().map(UserStats::getXp).orElse(0L));
             };
+        }
+
+        private Optional<UserStats> stats() {
+            return userStatsRepository.findById(userId);
+        }
+
+        /**
+         * Sessions finished at the given hours of the day <b>by the clock of the user</b>.
+         */
+        private long finishedBetweenHours(int fromHour, int toHour) {
+            String userZone = stats().map(GamificationServiceImpl.this::zoneOf).orElse(clock.getZone()).getId();
+            return trainingSessionRepository.countFinishedBetweenHours(userId, clock.getZone().getId(), userZone,
+                    fromHour, toHour);
         }
     }
 }

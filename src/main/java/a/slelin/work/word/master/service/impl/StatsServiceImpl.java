@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import java.sql.Date;
+import java.time.ZoneId;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,6 +45,8 @@ public class StatsServiceImpl implements StatsService {
 
     private final UserAchievementRepository userAchievementRepository;
 
+    private final UserStatsRepository userStatsRepository;
+
     private final StatsMapper statsMapper;
 
     private final Clock clock;
@@ -55,8 +57,9 @@ public class StatsServiceImpl implements StatsService {
         UserStats stats = gamificationService.getOrCreate(userId);
         long answers = answerRepository.countBySession_User_Id(userId);
         long correct = answerRepository.countBySession_User_IdAndIsCorrectTrue(userId);
-        LocalDateTime endOfToday = LocalDate.now(clock).plusDays(1).atStartOfDay();
-        int todayReviewed = gamificationService.todayReviewed(userId);
+        ZoneId zone = gamificationService.zoneOf(stats);
+        LocalDateTime endOfToday = toAppTime(gamificationService.today(stats).plusDays(1), zone);
+        int todayReviewed = gamificationService.todayReviewed(stats);
 
         return UserStatsResponse.builder()
                 .totalDecks(deckRepository.countByOwner_Id(userId))
@@ -78,12 +81,13 @@ public class StatsServiceImpl implements StatsService {
                 .todayReviewed(todayReviewed)
                 .achievementsUnlocked((int) userAchievementRepository.countByUserId(userId))
                 .achievementsTotal(Achievement.values().length)
+                .timeZone(zone.getId())
                 .build();
     }
 
     @Override
     public List<ActivityDayResponse> getActivity(UUID userId, int days) {
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = today(userId);
         return dailyActivityRepository
                 .findByUserIdAndActivityDateBetweenOrderByActivityDateAsc(userId, today.minusDays(days - 1L), today)
                 .stream()
@@ -93,13 +97,15 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     public List<ForecastDayResponse> getForecast(UUID userId, int days) {
-        LocalDate today = LocalDate.now(clock);
+        ZoneId zone = zone(userId);
+        LocalDate today = LocalDate.now(clock.withZone(zone));
         Map<LocalDate, Long> counts = new HashMap<>();
 
-        for (Object[] row : cardProgressRepository.forecast(userId, today.plusDays(days).atStartOfDay())) {
-            LocalDate day = toLocalDate(row[0]);
-            long count = ((Number) row[1]).longValue();
-            counts.merge(day.isBefore(today) ? today : day, count, Long::sum);
+        // Days are split by the clock of the user, so grouping is done here and not in SQL.
+        for (LocalDateTime reviewAt : cardProgressRepository.findReviewTimesBefore(userId,
+                toAppTime(today.plusDays(days), zone))) {
+            LocalDate day = reviewAt.atZone(clock.getZone()).withZoneSameInstant(zone).toLocalDate();
+            counts.merge(day.isBefore(today) ? today : day, 1L, Long::sum);
         }
 
         List<ForecastDayResponse> result = new ArrayList<>();
@@ -131,7 +137,7 @@ public class StatsServiceImpl implements StatsService {
      */
     @Override
     public Optional<WordOfTheDayResponse> getWordOfTheDay(UUID userId) {
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = today(userId);
         int seed = Objects.hash(userId, today);
 
         long own = cardRepository.countByDeck_Owner_Id(userId);
@@ -149,13 +155,19 @@ public class StatsServiceImpl implements StatsService {
         return cards.stream().findFirst().map(statsMapper::toWordOfTheDayDto);
     }
 
-    private static LocalDate toLocalDate(Object value) {
-        if (value instanceof LocalDate date) {
-            return date;
-        }
-        if (value instanceof Date date) {
-            return date.toLocalDate();
-        }
-        return LocalDate.parse(value.toString());
+    private ZoneId zone(UUID userId) {
+        return userStatsRepository.findById(userId).map(gamificationService::zoneOf).orElse(clock.getZone());
+    }
+
+    private LocalDate today(UUID userId) {
+        return LocalDate.now(clock.withZone(zone(userId)));
+    }
+
+    /**
+     * Start of the day in the zone of the user as a timestamp of the application zone
+     * (all timestamps in the database are stored in the application zone).
+     */
+    private LocalDateTime toAppTime(LocalDate day, ZoneId zone) {
+        return day.atStartOfDay(zone).withZoneSameInstant(clock.getZone()).toLocalDateTime();
     }
 }

@@ -14,6 +14,7 @@ import a.slelin.work.word.master.exception.DuplicateResourceException;
 import a.slelin.work.word.master.exception.EntityNotFoundByIdException;
 import a.slelin.work.word.master.mapper.common.PageMapper;
 import a.slelin.work.word.master.mapper.user.UserMapper;
+import a.slelin.work.word.master.repository.RefreshTokenRepository;
 import a.slelin.work.word.master.repository.UserRepository;
 import a.slelin.work.word.master.service.UserService;
 import jakarta.validation.Valid;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -44,19 +46,26 @@ public class UserServiceImpl implements UserService {
 
     private final PasswordEncoder passwordEncoder;
 
+    private final RefreshTokenRepository refreshTokenRepository;
+
     @Override
     @Transactional
     public UserResponse register(RegisterRequest request) {
 
-        if (userRepository.existsByUsernameIgnoreCase(request.username())) {
-            throw new DuplicateResourceException("username", request.username());
+        String username = request.username().trim();
+        String email = normalizeEmail(request.email());
+
+        if (userRepository.existsByUsernameIgnoreCase(username)) {
+            throw new DuplicateResourceException("username", username);
         }
 
-        if (userRepository.existsByEmailIgnoreCase(request.email())) {
-            throw new DuplicateResourceException("email", request.email());
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new DuplicateResourceException("email", email);
         }
 
         User user = userMapper.toEntity(request);
+        user.setUsername(username);
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(Role.USER);
 
@@ -91,11 +100,14 @@ public class UserServiceImpl implements UserService {
         }
 
         if (request.email() != null
-                && userRepository.existsByEmailIgnoreCaseAndIdNot(request.email(), id)) {
+                && userRepository.existsByEmailIgnoreCaseAndIdNot(normalizeEmail(request.email()), id)) {
             throw new DuplicateResourceException("email", request.email());
         }
 
         userMapper.patch(user, request);
+        if (request.email() != null) {
+            user.setEmail(normalizeEmail(request.email()));
+        }
         userRepository.save(user);
         return userMapper.toDto(user);
     }
@@ -111,6 +123,8 @@ public class UserServiceImpl implements UserService {
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
+        // Every device has to log in again with the new password.
+        refreshTokenRepository.revokeAllByUser(id);
     }
 
     @Override
@@ -128,6 +142,7 @@ public class UserServiceImpl implements UserService {
         }
 
         userMapper.applyRole(user, request);
+        refreshTokenRepository.revokeAllByUser(id);
         return userMapper.toDto(user);
     }
 
@@ -150,6 +165,10 @@ public class UserServiceImpl implements UserService {
     public User getEntityById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundByIdException(User.class, id));
+    }
+
+    private static String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private static Role parseRole(String role) {
