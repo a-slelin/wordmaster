@@ -1,33 +1,27 @@
 package a.slelin.work.word.master.dto.language;
 
 import a.slelin.work.word.master.dto.RequestDto;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record LanguageRequest(String code,
-                              String name) implements RequestDto {
+public record LanguageRequest(@Size(min = 2, max = 10) String code,
+                              @Size(min = 2, max = 255) String name,
+                              @Size(max = 16) String flag) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        String str = "LanguageRequest: [";
-
-        if (code == null && name == null) {
-            str += "empty";
-        }
-
-        if (code != null) {
-            str += "code = %s".formatted(code);
-        }
-
-        if (name != null) {
-            str += ", name = %s".formatted(name);
-        }
-
-        return str + "]";
+        List<String> parts = new ArrayList<>();
+        if (code != null) parts.add("code = " + code);
+        if (name != null) parts.add("name = " + name);
+        if (flag != null) parts.add("flag = " + flag);
+        return "LanguageRequest: [" + String.join(", ", parts) + "]";
     }
 
     @Override
@@ -36,13 +30,14 @@ public record LanguageRequest(String code,
             return false;
         }
 
-        LanguageRequest language = (LanguageRequest) o;
-        return Objects.equals(code, language.code) &&
-                Objects.equals(name, language.name);
+        LanguageRequest that = (LanguageRequest) o;
+        return Objects.equals(code, that.code) &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(flag, that.flag);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(code, name);
+        return Objects.hash(code, name, flag);
     }
 }

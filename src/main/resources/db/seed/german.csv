@@ -1,0 +1,61 @@
+deck_id,word,translation,transcription,example_sentence,position
+00000000-0000-0000-0000-000000000108,Hallo,привет,NULL,Hallo! Wie geht's?,1
+00000000-0000-0000-0000-000000000108,Tschüss,пока,NULL,"Tschüss, bis morgen!",2
+00000000-0000-0000-0000-000000000108,Danke,спасибо,NULL,Danke schön!,3
+00000000-0000-0000-0000-000000000108,Bitte,пожалуйста,NULL,"Einen Kaffee, bitte.",4
+00000000-0000-0000-0000-000000000108,Ja,да,NULL,"Ja, natürlich.",5
+00000000-0000-0000-0000-000000000108,Nein,нет,NULL,"Nein, danke.",6
+00000000-0000-0000-0000-000000000108,Guten Morgen,доброе утро,NULL,"Guten Morgen, Frau Müller!",7
+00000000-0000-0000-0000-000000000108,Gute Nacht,спокойной ночи,NULL,"Gute Nacht, schlaf gut.",8
+00000000-0000-0000-0000-000000000108,Entschuldigung,извините,NULL,"Entschuldigung, wo ist der Bahnhof?",9
+00000000-0000-0000-0000-000000000108,das Wasser,вода,NULL,"Ein Glas Wasser, bitte.",10
+00000000-0000-0000-0000-000000000108,das Brot,хлеб,NULL,Das Brot ist frisch.,11
+00000000-0000-0000-0000-000000000108,das Haus,дом,NULL,Das Haus ist groß.,12
+00000000-0000-0000-0000-000000000108,der Freund,друг,NULL,Er ist mein bester Freund.,13
+00000000-0000-0000-0000-000000000108,die Familie,семья,NULL,Meine Familie wohnt in Berlin.,14
+00000000-0000-0000-0000-000000000108,die Arbeit,работа,NULL,Ich gehe zur Arbeit.,15
+00000000-0000-0000-0000-000000000108,die Stadt,город,NULL,München ist eine schöne Stadt.,16
+00000000-0000-0000-0000-000000000108,das Buch,книга,NULL,Ich lese ein Buch.,17
+00000000-0000-0000-0000-000000000108,der Hund,собака,NULL,Der Hund bellt.,18
+00000000-0000-0000-0000-000000000108,die Katze,кошка,NULL,Die Katze schläft.,19
+00000000-0000-0000-0000-000000000108,die Zeit,время,NULL,Ich habe keine Zeit.,20
+00000000-0000-0000-0000-000000000108,der Tag,день,NULL,Schönen Tag noch!,21
+00000000-0000-0000-0000-000000000108,die Nacht,ночь,NULL,Die Nacht ist kalt.,22
+00000000-0000-0000-0000-000000000108,das Essen,еда,NULL,Das Essen ist lecker.,23
+00000000-0000-0000-0000-000000000108,das Auto,машина,NULL,Mein Auto ist neu.,24
+00000000-0000-0000-0000-000000000108,die Straße,улица,NULL,Ich wohne in dieser Straße.,25
+00000000-0000-0000-0000-000000000108,das Geld,деньги,NULL,Ich habe kein Geld.,26
+00000000-0000-0000-0000-000000000108,die Schule,школа,NULL,Die Kinder gehen zur Schule.,27
+00000000-0000-0000-0000-000000000108,der Mann,мужчина,NULL,Der Mann ist groß.,28
+00000000-0000-0000-0000-000000000108,die Frau,женщина,NULL,Die Frau ist Ärztin.,29
+00000000-0000-0000-0000-000000000108,das Kind,ребёнок,NULL,Das Kind spielt im Garten.,30
+00000000-0000-0000-0000-000000000108,der Apfel,яблоко,NULL,Ich esse einen Apfel.,31
+00000000-0000-0000-0000-000000000108,der Bahnhof,вокзал,NULL,Wo ist der Bahnhof?,32
+00000000-0000-0000-0000-000000000108,groß,большой,NULL,Das ist ein großes Haus.,33
+00000000-0000-0000-0000-000000000108,klein,маленький,NULL,Ich habe einen kleinen Hund.,34
+00000000-0000-0000-0000-000000000108,gut,хороший,NULL,Das ist gut!,35
+00000000-0000-0000-0000-000000000108,schlecht,плохой,NULL,Das Wetter ist schlecht.,36
+00000000-0000-0000-0000-000000000108,neu,новый,NULL,Ich habe ein neues Handy.,37
+00000000-0000-0000-0000-000000000108,schön,красивый,NULL,Was für ein schöner Tag!,38
+00000000-0000-0000-0000-000000000108,glücklich,счастливый,NULL,Ich bin sehr glücklich.,39
+00000000-0000-0000-0000-000000000108,sein,быть,NULL,Ich bin Student.,40
+00000000-0000-0000-0000-000000000108,haben,иметь,NULL,Ich habe zwei Brüder.,41
+00000000-0000-0000-0000-000000000108,machen,делать,NULL,Was machst du?,42
+00000000-0000-0000-0000-000000000108,gehen,идти,NULL,Ich gehe nach Hause.,43
+00000000-0000-0000-0000-000000000108,wollen,хотеть,NULL,Ich will Deutsch lernen.,44
+00000000-0000-0000-0000-000000000108,können,мочь,NULL,Kannst du mir helfen?,45
+00000000-0000-0000-0000-000000000108,sprechen,говорить,NULL,Sprechen Sie Deutsch?,46
+00000000-0000-0000-0000-000000000108,essen,есть,NULL,Wir essen um sieben.,47
+00000000-0000-0000-0000-000000000108,trinken,пить,NULL,Ich trinke Kaffee.,48
+00000000-0000-0000-0000-000000000108,wohnen,"жить, проживать",NULL,Ich wohne in Moskau.,49
+00000000-0000-0000-0000-000000000108,lernen,учить,NULL,Ich lerne jeden Tag.,50
+00000000-0000-0000-0000-000000000108,eins,один,NULL,Ich habe eins.,51
+00000000-0000-0000-0000-000000000108,zwei,два,NULL,"Zwei Bier, bitte.",52
+00000000-0000-0000-0000-000000000108,drei,три,NULL,Es ist drei Uhr.,53
+00000000-0000-0000-0000-000000000108,zehn,десять,NULL,Das kostet zehn Euro.,54
+00000000-0000-0000-0000-000000000108,heute,сегодня,NULL,Heute ist Montag.,55
+00000000-0000-0000-0000-000000000108,morgen,завтра,NULL,Bis morgen!,56
+00000000-0000-0000-0000-000000000108,gestern,вчера,NULL,Gestern war ich im Kino.,57
+00000000-0000-0000-0000-000000000108,immer,всегда,NULL,Ich bin immer pünktlich.,58
+00000000-0000-0000-0000-000000000108,Wie viel kostet das?,Сколько это стоит?,NULL,Wie viel kostet das Ticket?,59
+00000000-0000-0000-0000-000000000108,Wo ist...?,Где находится...?,NULL,Wo ist die Toilette?,60

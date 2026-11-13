@@ -19,17 +19,17 @@ import java.util.Objects;
 @Builder
 public record CardProgressResponse(@NotBlank String cardId,
                                    @NotBlank String status,
-                                   @NotNull @Min(1) Double easeFactor,
+                                   @NotNull Double easeFactor,
                                    @NotNull @Min(0) Integer intervalDays,
                                    @NotNull @Min(0) Long repetitions,
                                    @NotNull @Min(0) Long correctCount,
                                    @NotNull @Min(0) Long incorrectCount,
                                    @JsonSerialize(using = LocalDateTimeSerializer.class)
                                    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-                                   @NotNull LocalDateTime lastReviewedAt,
+                                   LocalDateTime lastReviewedAt,
                                    @JsonSerialize(using = LocalDateTimeSerializer.class)
                                    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-                                   @NotNull LocalDateTime nextReviewAt) implements ResponseDto {
+                                   LocalDateTime nextReviewAt) implements ResponseDto {
 
     @NonNull
     @Override
@@ -42,8 +42,8 @@ public record CardProgressResponse(@NotBlank String cardId,
         parts.add("repetitions = " + repetitions);
         parts.add("correctCount = " + correctCount);
         parts.add("incorrectCount = " + incorrectCount);
-        parts.add("lastReviewedAt = " + lastReviewedAt);
-        parts.add("nextReviewAt = " + nextReviewAt);
+        if (lastReviewedAt != null) parts.add("lastReviewedAt = " + lastReviewedAt);
+        if (nextReviewAt != null) parts.add("nextReviewAt = " + nextReviewAt);
         return "CardProgressResponse: [" + String.join(", ", parts) + "]";
     }
 
@@ -58,16 +58,16 @@ public record CardProgressResponse(@NotBlank String cardId,
                 Objects.equals(status, that.status) &&
                 Objects.equals(easeFactor, that.easeFactor) &&
                 Objects.equals(intervalDays, that.intervalDays) &&
-                Objects.equals(correctCount, that.correctCount) &&
                 Objects.equals(repetitions, that.repetitions) &&
+                Objects.equals(correctCount, that.correctCount) &&
                 Objects.equals(incorrectCount, that.incorrectCount) &&
-                Objects.equals(nextReviewAt, that.nextReviewAt) &&
-                Objects.equals(lastReviewedAt, that.lastReviewedAt);
+                Objects.equals(lastReviewedAt, that.lastReviewedAt) &&
+                Objects.equals(nextReviewAt, that.nextReviewAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cardId, status, easeFactor, intervalDays,
-                repetitions, correctCount, incorrectCount, lastReviewedAt, nextReviewAt);
+        return Objects.hash(cardId, status, easeFactor, intervalDays, repetitions, correctCount,
+                incorrectCount, lastReviewedAt, nextReviewAt);
     }
 }

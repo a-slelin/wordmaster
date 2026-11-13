@@ -36,4 +36,12 @@ public class Audit implements BaseEntity {
     protected void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    /**
+     * Forces "updated at" change even if no column of the entity itself changed
+     * (e.g. a card of the deck was added).
+     */
+    public void setUpdatedAtNow() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

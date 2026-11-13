@@ -3,6 +3,7 @@ package a.slelin.work.word.master.dto.deck;
 import a.slelin.work.word.master.dto.ResponseDto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -12,8 +13,8 @@ import java.util.Objects;
 
 @Builder
 public record DeckLikeResponse(@NotBlank String deckId,
-                               @NonNull Boolean liked,
-                               @NonNull @Min(0) Long likesCount) implements ResponseDto {
+                               @NotNull Boolean liked,
+                               @NotNull @Min(0) Long likesCount) implements ResponseDto {
 
     @NonNull
     @Override

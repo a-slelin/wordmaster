@@ -6,17 +6,19 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record ChangePasswordRequest(@NotBlank @Size(min = 8) String oldPassword,
-                                    @NotBlank @Size(min = 8) String newPassword) implements RequestDto {
+public record ChangePasswordRequest(@NotBlank String oldPassword,
+                                    @NotBlank @Size(min = 8, max = 72) String newPassword) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        return "ChangePasswordRequest: [hashCode = %s]"
-                .formatted(this.hashCode());
+        List<String> parts = new ArrayList<>();
+        return "ChangePasswordRequest: [" + String.join(", ", parts) + "]";
     }
 
     @Override

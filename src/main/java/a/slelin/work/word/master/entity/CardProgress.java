@@ -29,7 +29,7 @@ public class CardProgress implements BaseEntity {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER,
+    @ManyToOne(fetch = FetchType.LAZY,
             optional = false)
     @JoinColumn(name = "user_id",
             nullable = false)
@@ -71,4 +71,15 @@ public class CardProgress implements BaseEntity {
     @Column(nullable = false, length = 15)
     @Convert(converter = StatusConverter.class)
     private Status status;
+
+    @Min(0)
+    @NotNull
+    @Column(nullable = false,
+            name = "interval_days")
+    private Integer intervalDays;
+
+    @Min(0)
+    @NotNull
+    @Column(nullable = false)
+    private Long repetitions;
 }

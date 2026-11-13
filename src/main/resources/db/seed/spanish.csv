@@ -1,0 +1,61 @@
+deck_id,word,translation,transcription,example_sentence,position
+00000000-0000-0000-0000-000000000107,hola,привет,NULL,¡Hola! ¿Qué tal?,1
+00000000-0000-0000-0000-000000000107,adiós,до свидания,NULL,"Adiós, hasta mañana.",2
+00000000-0000-0000-0000-000000000107,gracias,спасибо,NULL,Muchas gracias por todo.,3
+00000000-0000-0000-0000-000000000107,por favor,пожалуйста (просьба),NULL,"Un café, por favor.",4
+00000000-0000-0000-0000-000000000107,sí,да,NULL,"Sí, claro.",5
+00000000-0000-0000-0000-000000000107,no,нет,NULL,"No, gracias.",6
+00000000-0000-0000-0000-000000000107,buenos días,доброе утро,NULL,"Buenos días, señora.",7
+00000000-0000-0000-0000-000000000107,buenas noches,доброй ночи,NULL,"Buenas noches, mamá.",8
+00000000-0000-0000-0000-000000000107,perdón,извините,NULL,"Perdón, ¿dónde está el baño?",9
+00000000-0000-0000-0000-000000000107,el agua,вода,NULL,Quiero un vaso de agua.,10
+00000000-0000-0000-0000-000000000107,el pan,хлеб,NULL,El pan está fresco.,11
+00000000-0000-0000-0000-000000000107,la casa,дом,NULL,Mi casa es tu casa.,12
+00000000-0000-0000-0000-000000000107,el amigo,друг,NULL,Él es mi mejor amigo.,13
+00000000-0000-0000-0000-000000000107,la familia,семья,NULL,Mi familia es grande.,14
+00000000-0000-0000-0000-000000000107,el trabajo,работа,NULL,Voy al trabajo en metro.,15
+00000000-0000-0000-0000-000000000107,la ciudad,город,NULL,Madrid es una ciudad bonita.,16
+00000000-0000-0000-0000-000000000107,el libro,книга,NULL,Estoy leyendo un libro.,17
+00000000-0000-0000-0000-000000000107,el perro,собака,NULL,El perro es muy simpático.,18
+00000000-0000-0000-0000-000000000107,el gato,кошка,NULL,El gato duerme.,19
+00000000-0000-0000-0000-000000000107,el tiempo,время; погода,NULL,No tengo tiempo.,20
+00000000-0000-0000-0000-000000000107,el día,день,NULL,Hoy es un buen día.,21
+00000000-0000-0000-0000-000000000107,la noche,ночь,NULL,La noche es fría.,22
+00000000-0000-0000-0000-000000000107,la mañana,утро,NULL,Me levanto temprano por la mañana.,23
+00000000-0000-0000-0000-000000000107,la comida,еда,NULL,La comida española es deliciosa.,24
+00000000-0000-0000-0000-000000000107,la playa,пляж,NULL,Vamos a la playa.,25
+00000000-0000-0000-0000-000000000107,el coche,машина,NULL,Mi coche es rojo.,26
+00000000-0000-0000-0000-000000000107,la calle,улица,NULL,Vivo en esta calle.,27
+00000000-0000-0000-0000-000000000107,el dinero,деньги,NULL,No tengo dinero.,28
+00000000-0000-0000-0000-000000000107,la escuela,школа,NULL,Los niños van a la escuela.,29
+00000000-0000-0000-0000-000000000107,el hombre,мужчина,NULL,El hombre es alto.,30
+00000000-0000-0000-0000-000000000107,la mujer,женщина,NULL,La mujer es médica.,31
+00000000-0000-0000-0000-000000000107,el niño,"ребёнок, мальчик",NULL,El niño juega en el parque.,32
+00000000-0000-0000-0000-000000000107,grande,большой,NULL,Es una casa grande.,33
+00000000-0000-0000-0000-000000000107,pequeño,маленький,NULL,Tengo un perro pequeño.,34
+00000000-0000-0000-0000-000000000107,bueno,хороший,NULL,Es un buen libro.,35
+00000000-0000-0000-0000-000000000107,malo,плохой,NULL,Hace mal tiempo.,36
+00000000-0000-0000-0000-000000000107,nuevo,новый,NULL,Tengo un teléfono nuevo.,37
+00000000-0000-0000-0000-000000000107,bonito,красивый,NULL,¡Qué bonito!,38
+00000000-0000-0000-0000-000000000107,feliz,счастливый,NULL,Estoy muy feliz.,39
+00000000-0000-0000-0000-000000000107,ser,быть (постоянно),NULL,Soy de Rusia.,40
+00000000-0000-0000-0000-000000000107,estar,"быть, находиться",NULL,Estoy en casa.,41
+00000000-0000-0000-0000-000000000107,tener,иметь,NULL,Tengo dos hermanos.,42
+00000000-0000-0000-0000-000000000107,hacer,делать,NULL,¿Qué haces?,43
+00000000-0000-0000-0000-000000000107,ir,"идти, ехать",NULL,Voy al cine.,44
+00000000-0000-0000-0000-000000000107,querer,хотеть; любить,NULL,Te quiero.,45
+00000000-0000-0000-0000-000000000107,poder,мочь,NULL,¿Puedo entrar?,46
+00000000-0000-0000-0000-000000000107,hablar,говорить,NULL,¿Hablas español?,47
+00000000-0000-0000-0000-000000000107,comer,есть,NULL,Vamos a comer.,48
+00000000-0000-0000-0000-000000000107,beber,пить,NULL,Quiero beber agua.,49
+00000000-0000-0000-0000-000000000107,vivir,жить,NULL,Vivo en Moscú.,50
+00000000-0000-0000-0000-000000000107,uno,один,NULL,Tengo un hermano.,51
+00000000-0000-0000-0000-000000000107,dos,два,NULL,"Dos cafés, por favor.",52
+00000000-0000-0000-0000-000000000107,tres,три,NULL,Son las tres.,53
+00000000-0000-0000-0000-000000000107,diez,десять,NULL,Tengo diez euros.,54
+00000000-0000-0000-0000-000000000107,hoy,сегодня,NULL,Hoy hace sol.,55
+00000000-0000-0000-0000-000000000107,mañana,завтра,NULL,Hasta mañana.,56
+00000000-0000-0000-0000-000000000107,ayer,вчера,NULL,Ayer fui al cine.,57
+00000000-0000-0000-0000-000000000107,siempre,всегда,NULL,Siempre llego tarde.,58
+00000000-0000-0000-0000-000000000107,¿Cuánto cuesta?,Сколько стоит?,NULL,¿Cuánto cuesta este libro?,59
+00000000-0000-0000-0000-000000000107,¿Dónde está...?,Где находится...?,NULL,¿Dónde está la estación?,60

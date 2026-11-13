@@ -44,19 +44,19 @@ public record HardWordResponse(@NotBlank String cardId,
         }
 
         HardWordResponse that = (HardWordResponse) o;
-        return Objects.equals(word, that.word) &&
-                Objects.equals(cardId, that.cardId) &&
+        return Objects.equals(cardId, that.cardId) &&
+                Objects.equals(word, that.word) &&
+                Objects.equals(translation, that.translation) &&
                 Objects.equals(deckId, that.deckId) &&
                 Objects.equals(deckTitle, that.deckTitle) &&
-                Objects.equals(errorRate, that.errorRate) &&
                 Objects.equals(correctCount, that.correctCount) &&
-                Objects.equals(translation, that.translation) &&
-                Objects.equals(incorrectCount, that.incorrectCount);
+                Objects.equals(incorrectCount, that.incorrectCount) &&
+                Objects.equals(errorRate, that.errorRate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cardId, word, translation, deckId, deckTitle,
-                correctCount, incorrectCount, errorRate);
+        return Objects.hash(cardId, word, translation, deckId, deckTitle, correctCount, incorrectCount,
+                errorRate);
     }
 }

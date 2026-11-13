@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.NonNull;
-import org.hibernate.validator.constraints.URL;
 import tools.jackson.databind.annotation.JsonDeserialize;
 import tools.jackson.databind.annotation.JsonSerialize;
 
@@ -24,8 +23,8 @@ public record CardWithProgressResponse(@NotBlank String id,
                                        @NotBlank String translation,
                                        String transcription,
                                        String exampleSentence,
-                                       @URL String imageUrl,
-                                       @URL String audioUrl,
+                                       String imageUrl,
+                                       String audioUrl,
                                        @NotNull @Min(1) Long position,
                                        @JsonSerialize(using = LocalDateTimeSerializer.class)
                                        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
@@ -34,17 +33,17 @@ public record CardWithProgressResponse(@NotBlank String id,
                                        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
                                        @NotNull LocalDateTime updatedAt,
                                        @NotBlank String status,
-                                       @NotNull @Min(1) Double easeFactor,
+                                       @NotNull Double easeFactor,
                                        @NotNull @Min(0) Integer intervalDays,
                                        @NotNull @Min(0) Long repetitions,
                                        @NotNull @Min(0) Long correctCount,
                                        @NotNull @Min(0) Long incorrectCount,
                                        @JsonSerialize(using = LocalDateTimeSerializer.class)
                                        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-                                       @NotNull LocalDateTime lastReviewedAt,
+                                       LocalDateTime lastReviewedAt,
                                        @JsonSerialize(using = LocalDateTimeSerializer.class)
                                        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-                                       @NotNull LocalDateTime nextReviewAt) implements ResponseDto {
+                                       LocalDateTime nextReviewAt) implements ResponseDto {
 
     @NonNull
     @Override
@@ -67,9 +66,8 @@ public record CardWithProgressResponse(@NotBlank String id,
         parts.add("repetitions = " + repetitions);
         parts.add("correctCount = " + correctCount);
         parts.add("incorrectCount = " + incorrectCount);
-        parts.add("lastReviewedAt = " + lastReviewedAt);
-        parts.add("nextReviewAt = " + nextReviewAt);
-
+        if (lastReviewedAt != null) parts.add("lastReviewedAt = " + lastReviewedAt);
+        if (nextReviewAt != null) parts.add("nextReviewAt = " + nextReviewAt);
         return "CardWithProgressResponse: [" + String.join(", ", parts) + "]";
     }
 
@@ -81,31 +79,30 @@ public record CardWithProgressResponse(@NotBlank String id,
 
         CardWithProgressResponse that = (CardWithProgressResponse) o;
         return Objects.equals(id, that.id) &&
-                Objects.equals(word, that.word) &&
                 Objects.equals(deckId, that.deckId) &&
-                Objects.equals(position, that.position) &&
-                Objects.equals(status, that.status) &&
-                Objects.equals(imageUrl, that.imageUrl) &&
-                Objects.equals(audioUrl, that.audioUrl) &&
-                Objects.equals(easeFactor, that.easeFactor) &&
-                Objects.equals(correctCount, that.correctCount) &&
+                Objects.equals(word, that.word) &&
                 Objects.equals(translation, that.translation) &&
-                Objects.equals(repetitions, that.repetitions) &&
-                Objects.equals(incorrectCount, that.incorrectCount) &&
                 Objects.equals(transcription, that.transcription) &&
                 Objects.equals(exampleSentence, that.exampleSentence) &&
-                Objects.equals(intervalDays, that.intervalDays) &&
+                Objects.equals(imageUrl, that.imageUrl) &&
+                Objects.equals(audioUrl, that.audioUrl) &&
+                Objects.equals(position, that.position) &&
                 Objects.equals(createdAt, that.createdAt) &&
                 Objects.equals(updatedAt, that.updatedAt) &&
-                Objects.equals(nextReviewAt, that.nextReviewAt) &&
-                Objects.equals(lastReviewedAt, that.lastReviewedAt);
+                Objects.equals(status, that.status) &&
+                Objects.equals(easeFactor, that.easeFactor) &&
+                Objects.equals(intervalDays, that.intervalDays) &&
+                Objects.equals(repetitions, that.repetitions) &&
+                Objects.equals(correctCount, that.correctCount) &&
+                Objects.equals(incorrectCount, that.incorrectCount) &&
+                Objects.equals(lastReviewedAt, that.lastReviewedAt) &&
+                Objects.equals(nextReviewAt, that.nextReviewAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, deckId, word, translation, transcription,
-                exampleSentence, imageUrl, audioUrl, position, createdAt,
-                updatedAt, status, easeFactor, intervalDays, repetitions,
+        return Objects.hash(id, deckId, word, translation, transcription, exampleSentence, imageUrl,
+                audioUrl, position, createdAt, updatedAt, status, easeFactor, intervalDays, repetitions,
                 correctCount, incorrectCount, lastReviewedAt, nextReviewAt);
     }
 }

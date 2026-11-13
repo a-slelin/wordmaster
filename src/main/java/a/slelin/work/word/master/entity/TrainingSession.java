@@ -30,7 +30,7 @@ public class TrainingSession implements BaseEntity {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER,
+    @ManyToOne(fetch = FetchType.LAZY,
             optional = false)
     @JoinColumn(name = "user_id",
             nullable = false)
@@ -43,6 +43,16 @@ public class TrainingSession implements BaseEntity {
     @JoinColumn(name = "deck_id",
             nullable = false)
     private Deck deck;
+
+    @NotNull
+    @Column(nullable = false, length = 15)
+    @Convert(converter = TrainingModeConverter.class)
+    private TrainingMode mode;
+
+    @NotNull
+    @Column(nullable = false, length = 15)
+    @Convert(converter = TrainingDirectionConverter.class)
+    private TrainingDirection direction;
 
     @NotNull
     @Column(nullable = false,
@@ -62,13 +72,34 @@ public class TrainingSession implements BaseEntity {
     @Column(name = "cards_correct")
     private Long cardsCorrect;
 
+    @Min(0)
+    @NotNull
+    @Column(nullable = false,
+            name = "answers_total")
+    private Long answersTotal;
+
+    @Min(0)
+    @NotNull
+    @Column(nullable = false,
+            name = "xp_earned")
+    private Long xpEarned;
+
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @OneToMany(
             mappedBy = "session",
             orphanRemoval = true,
             fetch = FetchType.LAZY,
-            cascade = CascadeType.REMOVE
+            cascade = CascadeType.ALL
+    )
+    @OrderBy("position ASC")
+    private List<TrainingSessionCard> sessionCards;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(
+            mappedBy = "session",
+            fetch = FetchType.LAZY
     )
     private List<TrainingAnswer> trainingAnswers;
 }

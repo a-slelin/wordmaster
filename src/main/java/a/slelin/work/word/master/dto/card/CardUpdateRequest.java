@@ -1,21 +1,24 @@
 package a.slelin.work.word.master.dto.card;
 
 import a.slelin.work.word.master.dto.RequestDto;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
+import org.hibernate.validator.constraints.URL;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record CardUpdateRequest(String word,
-                                String translation,
-                                String transcription,
-                                String exampleSentence,
-                                String imageUrl,
-                                String audioUrl,
-                                Long position) implements RequestDto {
+public record CardUpdateRequest(@Size(min = 1, max = 255) String word,
+                                @Size(min = 1, max = 255) String translation,
+                                @Size(max = 255) String transcription,
+                                @Size(max = 2000) String exampleSentence,
+                                @URL @Size(max = 1024) String imageUrl,
+                                @URL @Size(max = 1024) String audioUrl,
+                                @Min(1) Long position) implements RequestDto {
 
     @NonNull
     @Override
@@ -28,10 +31,6 @@ public record CardUpdateRequest(String word,
         if (imageUrl != null) parts.add("imageUrl = " + imageUrl);
         if (audioUrl != null) parts.add("audioUrl = " + audioUrl);
         if (position != null) parts.add("position = " + position);
-
-        if (parts.isEmpty()) {
-            return "CardUpdateRequest: [empty]";
-        }
         return "CardUpdateRequest: [" + String.join(", ", parts) + "]";
     }
 
@@ -43,17 +42,16 @@ public record CardUpdateRequest(String word,
 
         CardUpdateRequest that = (CardUpdateRequest) o;
         return Objects.equals(word, that.word) &&
-                Objects.equals(position, that.position) &&
-                Objects.equals(imageUrl, that.imageUrl) &&
-                Objects.equals(audioUrl, that.audioUrl) &&
                 Objects.equals(translation, that.translation) &&
                 Objects.equals(transcription, that.transcription) &&
-                Objects.equals(exampleSentence, that.exampleSentence);
+                Objects.equals(exampleSentence, that.exampleSentence) &&
+                Objects.equals(imageUrl, that.imageUrl) &&
+                Objects.equals(audioUrl, that.audioUrl) &&
+                Objects.equals(position, that.position);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(word, translation, transcription,
-                exampleSentence, imageUrl, audioUrl, position);
+        return Objects.hash(word, translation, transcription, exampleSentence, imageUrl, audioUrl, position);
     }
 }

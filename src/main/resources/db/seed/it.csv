@@ -1,0 +1,61 @@
+deck_id,word,translation,transcription,example_sentence,position
+00000000-0000-0000-0000-000000000105,deploy,"развернуть, выкатить",[dɪˈplɔɪ],We deploy to production every Friday.,1
+00000000-0000-0000-0000-000000000105,release,"релиз, выпуск",[rɪˈliːs],The new release fixes many bugs.,2
+00000000-0000-0000-0000-000000000105,bug,"баг, ошибка",[bʌɡ],I found a bug in the login form.,3
+00000000-0000-0000-0000-000000000105,fix,исправлять; исправление,[fɪks],Can you fix this issue today?,4
+00000000-0000-0000-0000-000000000105,issue,"задача, проблема",[ˈɪʃuː],Please create an issue on GitHub.,5
+00000000-0000-0000-0000-000000000105,requirement,требование,[rɪˈkwaɪəmənt],The requirements changed again.,6
+00000000-0000-0000-0000-000000000105,feature,"функциональность, фича",[ˈfiːtʃə],This feature is still in development.,7
+00000000-0000-0000-0000-000000000105,branch,ветка,[brɑːntʃ],Create a new branch for your work.,8
+00000000-0000-0000-0000-000000000105,merge,слияние; сливать,[mɜːdʒ],Merge your branch into main.,9
+00000000-0000-0000-0000-000000000105,pull request,пулл-реквест,[pʊl rɪˈkwest],Open a pull request when you're ready.,10
+00000000-0000-0000-0000-000000000105,code review,ревью кода,[kəʊd rɪˈvjuː],The code review took two hours.,11
+00000000-0000-0000-0000-000000000105,commit,коммит; фиксировать,[kəˈmɪt],Write a clear commit message.,12
+00000000-0000-0000-0000-000000000105,repository,репозиторий,[rɪˈpɒzɪtri],Clone the repository first.,13
+00000000-0000-0000-0000-000000000105,database,база данных,[ˈdeɪtəbeɪs],The database is running slowly.,14
+00000000-0000-0000-0000-000000000105,query,запрос,[ˈkwɪəri],This query takes too long.,15
+00000000-0000-0000-0000-000000000105,schema,схема,[ˈskiːmə],We changed the database schema.,16
+00000000-0000-0000-0000-000000000105,migration,миграция,[maɪˈɡreɪʃn],Run the migration before starting the app.,17
+00000000-0000-0000-0000-000000000105,dependency,зависимость,[dɪˈpendənsi],Update the dependencies regularly.,18
+00000000-0000-0000-0000-000000000105,library,библиотека,[ˈlaɪbrəri],We use a library for JSON parsing.,19
+00000000-0000-0000-0000-000000000105,framework,"фреймворк, каркас",[ˈfreɪmwɜːk],Spring is a popular Java framework.,20
+00000000-0000-0000-0000-000000000105,environment,"окружение, среда",[ɪnˈvaɪrənmənt],The bug only happens in the test environment.,21
+00000000-0000-0000-0000-000000000105,configuration,конфигурация,[kənˌfɪɡəˈreɪʃn],Check the configuration file.,22
+00000000-0000-0000-0000-000000000105,server,сервер,[ˈsɜːvə],The server is down.,23
+00000000-0000-0000-0000-000000000105,request,запрос,[rɪˈkwest],The request returned an error.,24
+00000000-0000-0000-0000-000000000105,response,ответ,[rɪˈspɒns],The response time is 200 ms.,25
+00000000-0000-0000-0000-000000000105,endpoint,"эндпоинт, точка доступа",[ˈendpɔɪnt],Add a new endpoint for users.,26
+00000000-0000-0000-0000-000000000105,authentication,аутентификация,[ɔːˌθentɪˈkeɪʃn],Authentication failed.,27
+00000000-0000-0000-0000-000000000105,authorization,авторизация,[ˌɔːθəraɪˈzeɪʃn],You need authorization to access this page.,28
+00000000-0000-0000-0000-000000000105,token,токен,[ˈtəʊkən],The access token has expired.,29
+00000000-0000-0000-0000-000000000105,encryption,шифрование,[ɪnˈkrɪpʃn],All data is protected by encryption.,30
+00000000-0000-0000-0000-000000000105,vulnerability,уязвимость,[ˌvʌlnərəˈbɪləti],We fixed a security vulnerability.,31
+00000000-0000-0000-0000-000000000105,performance,производительность,[pəˈfɔːməns],We need to improve performance.,32
+00000000-0000-0000-0000-000000000105,scalability,масштабируемость,[ˌskeɪləˈbɪləti],Scalability is important for growing apps.,33
+00000000-0000-0000-0000-000000000105,throughput,пропускная способность,[ˈθruːpʊt],The system has high throughput.,34
+00000000-0000-0000-0000-000000000105,latency,задержка,[ˈleɪtənsi],Network latency is too high.,35
+00000000-0000-0000-0000-000000000105,bottleneck,узкое место,[ˈbɒtlnek],The database is the bottleneck.,36
+00000000-0000-0000-0000-000000000105,cache,кеш; кешировать,[kæʃ],Clear the cache and try again.,37
+00000000-0000-0000-0000-000000000105,thread,поток,[θred],This method is not thread-safe.,38
+00000000-0000-0000-0000-000000000105,memory leak,утечка памяти,[ˈmeməri liːk],We found a memory leak.,39
+00000000-0000-0000-0000-000000000105,exception,исключение,[ɪkˈsepʃn],The method throws an exception.,40
+00000000-0000-0000-0000-000000000105,stack trace,трассировка стека,[stæk treɪs],Send me the full stack trace.,41
+00000000-0000-0000-0000-000000000105,log,"лог, журнал",[lɒɡ],Check the logs for errors.,42
+00000000-0000-0000-0000-000000000105,test coverage,покрытие тестами,[test ˈkʌvərɪdʒ],Our test coverage is 80%.,43
+00000000-0000-0000-0000-000000000105,unit test,модульный тест,[ˈjuːnɪt test],Write a unit test for this method.,44
+00000000-0000-0000-0000-000000000105,refactoring,рефакторинг,[ˌriːˈfæktərɪŋ],This code needs refactoring.,45
+00000000-0000-0000-0000-000000000105,legacy code,унаследованный код,[ˈleɡəsi kəʊd],Working with legacy code is hard.,46
+00000000-0000-0000-0000-000000000105,technical debt,технический долг,[ˈteknɪkl det],We need to pay off technical debt.,47
+00000000-0000-0000-0000-000000000105,deadline,"срок, дедлайн",[ˈdedlaɪn],The deadline is next Monday.,48
+00000000-0000-0000-0000-000000000105,estimate,оценка; оценивать,[ˈestɪmeɪt],How long will it take? Give me an estimate.,49
+00000000-0000-0000-0000-000000000105,sprint,спринт,[sprɪnt],We plan tasks for the next sprint.,50
+00000000-0000-0000-0000-000000000105,backlog,бэклог,[ˈbæklɒɡ],Add this task to the backlog.,51
+00000000-0000-0000-0000-000000000105,stakeholder,заинтересованная сторона,[ˈsteɪkhəʊldə],We presented the demo to stakeholders.,52
+00000000-0000-0000-0000-000000000105,stand-up,"стендап, ежедневная встреча",[ˈstændʌp],Our daily stand-up starts at ten.,53
+00000000-0000-0000-0000-000000000105,workaround,обходное решение,[ˈwɜːkəraʊnd],We found a workaround for now.,54
+00000000-0000-0000-0000-000000000105,rollback,откат,[ˈrəʊlbæk],We had to do a rollback.,55
+00000000-0000-0000-0000-000000000105,outage,"сбой, простой",[ˈaʊtɪdʒ],The outage lasted two hours.,56
+00000000-0000-0000-0000-000000000105,to reproduce,воспроизвести,[ˌriːprəˈdjuːs],I can't reproduce the bug.,57
+00000000-0000-0000-0000-000000000105,to implement,реализовать,[ˈɪmplɪment],We implemented the new API.,58
+00000000-0000-0000-0000-000000000105,to maintain,"поддерживать, сопровождать",[meɪnˈteɪn],Who maintains this service?,59
+00000000-0000-0000-0000-000000000105,to troubleshoot,искать и устранять неполадки,[ˈtrʌblʃuːt],Let's troubleshoot the network.,60

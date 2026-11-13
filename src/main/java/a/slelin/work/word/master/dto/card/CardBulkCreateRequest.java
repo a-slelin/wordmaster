@@ -1,37 +1,21 @@
 package a.slelin.work.word.master.dto.card;
 
 import a.slelin.work.word.master.dto.RequestDto;
-import jakarta.validation.constraints.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
-import lombok.NonNull;
 
 import java.util.List;
-import java.util.Objects;
 
 @Builder
-public record CardBulkCreateRequest(@NotNull List<CardCreateRequest> cards) implements RequestDto {
+public record CardBulkCreateRequest(@NotEmpty @Size(max = 1000) List<@Valid CardCreateRequest> cards,
+                                    @Schema(description = "Skip cards whose word and translation are already "
+                                            + "in the deck or repeated in the request (default: true)")
+                                    Boolean skipDuplicates) implements RequestDto {
 
-    @NonNull
-    @Override
-    public String toString() {
-        if (cards == null || cards.isEmpty()) {
-            return "CardBulkCreateRequest: [empty]";
-        }
-        return "CardBulkCreateRequest: [cards = " + cards + "]";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        CardBulkCreateRequest that = (CardBulkCreateRequest) o;
-        return Objects.equals(cards, that.cards);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(cards);
+    public boolean shouldSkipDuplicates() {
+        return skipDuplicates == null || skipDuplicates;
     }
 }

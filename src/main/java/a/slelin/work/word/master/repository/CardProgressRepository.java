@@ -1,0 +1,92 @@
+package a.slelin.work.word.master.repository;
+
+import a.slelin.work.word.master.entity.CardProgress;
+import a.slelin.work.word.master.entity.Status;
+import a.slelin.work.word.master.repository.projection.DeckCount;
+import a.slelin.work.word.master.repository.projection.DeckStatusCount;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface CardProgressRepository extends JpaRepository<CardProgress, UUID> {
+
+    Optional<CardProgress> findByUser_IdAndCard_Id(UUID userId, UUID cardId);
+
+    List<CardProgress> findByUser_IdAndCard_Deck_Id(UUID userId, UUID deckId);
+
+    long countByCard_Deck_IdAndUser_IdAndStatus(UUID deckId, UUID userId, Status status);
+
+    long countByCard_Deck_IdAndUser_IdAndNextReviewAtLessThanEqual(UUID deckId, UUID userId, LocalDateTime time);
+
+    long countByUser_IdAndStatus(UUID userId, Status status);
+
+    long countByUser_IdAndNextReviewAtLessThanEqual(UUID userId, LocalDateTime time);
+
+    @Query("""
+            select new a.slelin.work.word.master.repository.projection.DeckStatusCount(p.card.deck.id, p.status, count(p))
+            from CardProgress p
+            where p.user.id = :userId and p.card.deck.id in :deckIds
+            group by p.card.deck.id, p.status
+            """)
+    List<DeckStatusCount> countByStatus(@Param("userId") UUID userId, @Param("deckIds") Collection<UUID> deckIds);
+
+    @Query("""
+            select new a.slelin.work.word.master.repository.projection.DeckCount(p.card.deck.id, count(p))
+            from CardProgress p
+            where p.user.id = :userId and p.card.deck.id in :deckIds and p.nextReviewAt <= :time
+            group by p.card.deck.id
+            """)
+    List<DeckCount> countDue(@Param("userId") UUID userId, @Param("deckIds") Collection<UUID> deckIds,
+                             @Param("time") LocalDateTime time);
+
+    @Query("""
+            select p from CardProgress p
+            join fetch p.card c
+            join fetch c.deck d
+            where p.user.id = :userId
+              and (d.isPublic = true or d.owner.id = :userId)
+              and p.incorrectCount > 0
+            order by (p.incorrectCount * 1.0 / (p.correctCount + p.incorrectCount)) desc, p.incorrectCount desc
+            """)
+    List<CardProgress> findHardest(@Param("userId") UUID userId, Pageable pageable);
+
+    @Query("""
+            select p from CardProgress p
+            join fetch p.card c
+            join fetch c.deck d
+            where p.user.id = :userId
+              and d.id = :deckId
+              and (d.isPublic = true or d.owner.id = :userId)
+              and p.incorrectCount > 0
+            order by (p.incorrectCount * 1.0 / (p.correctCount + p.incorrectCount)) desc, p.incorrectCount desc
+            """)
+    List<CardProgress> findHardestInDeck(@Param("userId") UUID userId, @Param("deckId") UUID deckId,
+                                         Pageable pageable);
+
+    /**
+     * Forgets everything the user has learned in the deck.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            delete from card_progress p
+            using card c
+            where c.id = p.card_id and c.deck_id = :deckId and p.user_id = :userId
+            """, nativeQuery = true)
+    int deleteByUserAndDeck(@Param("userId") UUID userId, @Param("deckId") UUID deckId);
+
+    /**
+     * Planned review times before the given moment (for the review forecast).
+     */
+    @Query("select p.nextReviewAt from CardProgress p where p.user.id = :userId and p.nextReviewAt < :to")
+    List<LocalDateTime> findReviewTimesBefore(@Param("userId") UUID userId, @Param("to") LocalDateTime to);
+}

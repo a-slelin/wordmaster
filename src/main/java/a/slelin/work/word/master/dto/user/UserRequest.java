@@ -2,33 +2,26 @@ package a.slelin.work.word.master.dto.user;
 
 import a.slelin.work.word.master.dto.RequestDto;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Builder
-public record UserRequest(String username,
-                          @Email String email) implements RequestDto {
+public record UserRequest(@Size(min = 3, max = 50) @Pattern(regexp = "[A-Za-z0-9._-]+") String username,
+                          @Email @Size(max = 50) String email) implements RequestDto {
 
     @NonNull
     @Override
     public String toString() {
-        String str = "UserRequest: [";
-
-        if (username == null && email == null) {
-            str += "empty";
-        }
-
-        if (username != null) {
-            str += "username = %s".formatted(username);
-        }
-
-        if (email != null) {
-            str += ", email = %s".formatted(email);
-        }
-
-        return str + "]";
+        List<String> parts = new ArrayList<>();
+        if (username != null) parts.add("username = " + username);
+        if (email != null) parts.add("email = " + email);
+        return "UserRequest: [" + String.join(", ", parts) + "]";
     }
 
     @Override
@@ -37,9 +30,9 @@ public record UserRequest(String username,
             return false;
         }
 
-        UserRequest user = (UserRequest) o;
-        return Objects.equals(email, user.email) &&
-                Objects.equals(username, user.username);
+        UserRequest that = (UserRequest) o;
+        return Objects.equals(username, that.username) &&
+                Objects.equals(email, that.email);
     }
 
     @Override

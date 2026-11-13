@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset a.slelin:0011-create-trigger-created_at context:!test
+--changeset a.slelin:011-create-trigger-created_at
 
 CREATE
     OR REPLACE FUNCTION check_created_at()

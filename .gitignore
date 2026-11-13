@@ -4,3 +4,13 @@
 *target/
 *.iml
 *.log
+
+# Environment (secrets) - use .env.example as a template
+.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dev-dist/
+frontend/*.tsbuildinfo
+.DS_Store

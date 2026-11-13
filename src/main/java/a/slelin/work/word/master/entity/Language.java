@@ -27,15 +27,19 @@ public class Language implements BaseEntity {
     private Long id;
 
     @NotBlank
-    @Size(min = 3, max = 255)
+    @Size(min = 2, max = 10)
     @Column(nullable = false,
-            unique = true)
+            unique = true,
+            length = 10)
     private String code;
 
     @NotBlank
-    @Size(min = 3, max = 255)
+    @Size(min = 2, max = 255)
     @Column(nullable = false)
     private String name;
+
+    @Size(max = 16)
+    private String flag;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

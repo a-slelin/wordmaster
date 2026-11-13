@@ -2,6 +2,7 @@ package a.slelin.work.word.master.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public class TrainingAnswer implements BaseEntity {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @ManyToOne(fetch = FetchType.EAGER,
+    @ManyToOne(fetch = FetchType.LAZY,
             optional = false)
     @JoinColumn(name = "session_id",
             nullable = false)
@@ -42,9 +43,19 @@ public class TrainingAnswer implements BaseEntity {
             nullable = false)
     private Card card;
 
+    @NotNull
+    @Column(nullable = false, length = 15)
+    @Convert(converter = GradeConverter.class)
+    private Grade grade;
+
+    @NotNull
     @Column(nullable = false,
             name = "is_correct")
-    private boolean isCorrect;
+    private Boolean isCorrect;
+
+    @Size(max = 255)
+    @Column(name = "user_answer")
+    private String userAnswer;
 
     @NotNull
     @Column(nullable = false,
