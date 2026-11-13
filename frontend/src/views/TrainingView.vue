@@ -129,6 +129,7 @@ async function submit(payload: { grade?: Grade; answer?: string }) {
     result.value = res
     onResult(res)
   } catch (e) {
+    chosen.value = null
     showError(e)
   } finally {
     sending.value = false
@@ -158,7 +159,9 @@ function onResult(res: AnswerResult) {
   if (mode.value === 'flashcards') {
     proceed()
   } else if (mode.value === 'choice' && res.correct) {
-    setTimeout(() => result.value === res && proceed(), 900)
+    // "result" is a reactive proxy, so it is compared by its key and not with "res" itself.
+    const shown = cardKey.value
+    setTimeout(() => cardKey.value === shown && result.value && proceed(), 900)
   }
 }
 
@@ -238,7 +241,9 @@ const cardStyle = computed(() => {
 
 // ===== Keyboard =====
 function onKey(event: KeyboardEvent) {
-  if (summary.value || loading.value || ui.confirmRequest) return
+  // A held key must not answer several cards in a row.
+  if (summary.value || loading.value || ui.confirmRequest || event.repeat) return
+  if (event.ctrlKey || event.metaKey || event.altKey) return
   const target = event.target as HTMLElement
   const typing = target.tagName === 'INPUT'
 

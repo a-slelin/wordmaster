@@ -19,7 +19,7 @@ export const userApi = {
   me: () => http.get<User>('/users/me'),
   update: (body: { username?: string; email?: string }) => http.patch<User>('/users/me', body),
   changePassword: (body: { oldPassword: string; newPassword: string }) => http.put<void>('/users/me/password', body),
-  updateSettings: (body: { dailyGoal: number }) => http.put<UserStats>('/users/me/settings', body),
+  updateSettings: (body: { dailyGoal?: number; timeZone?: string }) => http.put<UserStats>('/users/me/settings', body),
   deleteMe: () => http.delete<void>('/users/me'),
 }
 
@@ -50,6 +50,7 @@ export const deckApi = {
   like: (id: Uuid) => http.post<DeckLikeResult>(`/decks/${id}/like`),
   unlike: (id: Uuid) => http.delete<DeckLikeResult>(`/decks/${id}/like`),
   progress: (id: Uuid) => http.get<DeckProgress>(`/decks/${id}/progress`),
+  resetProgress: (id: Uuid) => http.delete<DeckProgress>(`/decks/${id}/progress`),
   cards: (id: Uuid) => http.get<CardWithProgress[]>(`/decks/${id}/cards`),
   addCard: (id: Uuid, body: CardPayload) => http.post<Card>(`/decks/${id}/cards`, body),
   addCards: (id: Uuid, cards: CardPayload[]) => http.post<Card[]>(`/decks/${id}/cards/bulk`, { cards }),

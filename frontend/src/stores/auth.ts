@@ -1,6 +1,16 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { authApi, tokens, userApi, type AuthResponse, type User } from '@/api'
+import { ApiError, authApi, tokens, userApi, type AuthResponse, type User } from '@/api'
+
+const USER_KEY = 'wm-user'
+
+function cachedUser(): User | null {
+  try {
+    return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null') as User | null
+  } catch {
+    return null
+  }
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -9,9 +19,15 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => user.value !== null)
   const isAdmin = computed(() => user.value?.role === 'admin')
 
+  function setUser(value: User | null) {
+    user.value = value
+    if (value) localStorage.setItem(USER_KEY, JSON.stringify(value))
+    else localStorage.removeItem(USER_KEY)
+  }
+
   function apply(auth: AuthResponse) {
     tokens.save(auth)
-    user.value = auth.user
+    setUser(auth.user)
   }
 
   /** Restores the session from saved tokens on application start. */
@@ -19,11 +35,16 @@ export const useAuthStore = defineStore('auth', () => {
     if (ready.value) return
     try {
       if (tokens.access || tokens.refresh) {
-        user.value = await userApi.me()
+        setUser(await userApi.me())
       }
-    } catch {
-      tokens.clear()
-      user.value = null
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 0 && tokens.refresh) {
+        // The server is unreachable right now: keep the session and show the last known profile.
+        user.value = cachedUser()
+      } else {
+        tokens.clear()
+        setUser(null)
+      }
     } finally {
       ready.value = true
     }
@@ -40,7 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout() {
     const refresh = tokens.refresh
     tokens.clear()
-    user.value = null
+    setUser(null)
     if (refresh) {
       authApi.logout(refresh).catch(() => undefined)
     }
@@ -48,8 +69,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   function reset() {
     tokens.clear()
-    user.value = null
+    setUser(null)
   }
 
-  return { user, ready, isAuthenticated, isAdmin, init, login, register, logout, reset }
+  return { user, setUser, ready, isAuthenticated, isAdmin, init, login, register, logout, reset }
 })

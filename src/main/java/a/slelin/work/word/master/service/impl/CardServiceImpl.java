@@ -21,8 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -78,9 +81,22 @@ public class CardServiceImpl implements CardService {
         Deck deck = deckService.getEditableDeck(actor, deckId);
         long position = cardRepository.findMaxPosition(deck.getId());
 
+        Set<String> existing = new HashSet<>();
+        if (request.shouldSkipDuplicates()) {
+            cardRepository.findByDeckIdOrderByPositionAsc(deck.getId())
+                    .forEach(card -> existing.add(duplicateKey(card.getWord(), card.getTranslation())));
+        }
+
         List<Card> cards = new ArrayList<>();
         for (CardCreateRequest item : request.cards()) {
+            if (request.shouldSkipDuplicates() && !existing.add(duplicateKey(item.word(), item.translation()))) {
+                continue;
+            }
             cards.add(build(deck, item, ++position));
+        }
+
+        if (cards.isEmpty()) {
+            return List.of();
         }
 
         touch(deck);
@@ -124,6 +140,10 @@ public class CardServiceImpl implements CardService {
         card.setTranslation(request.translation().trim());
         card.setPosition(request.position() == null ? defaultPosition : request.position());
         return card;
+    }
+
+    private static String duplicateKey(String word, String translation) {
+        return word.trim().toLowerCase(Locale.ROOT) + '\u0000' + translation.trim().toLowerCase(Locale.ROOT);
     }
 
     /**

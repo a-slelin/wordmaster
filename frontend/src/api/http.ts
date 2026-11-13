@@ -50,24 +50,48 @@ export function onUnauthorized(listener: Listener) {
   unauthorizedListeners.push(listener)
 }
 
-let refreshing: Promise<boolean> | null = null
+type RefreshResult = 'ok' | 'rejected' | 'offline'
 
-async function refreshTokens(): Promise<boolean> {
-  const refreshToken = tokens.refresh
-  if (!refreshToken) return false
+let refreshing: Promise<RefreshResult> | null = null
 
-  // Single-flight: parallel requests wait for the same refresh.
-  refreshing ??= fetch(`${BASE}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  })
-    .then(async (response) => {
-      if (!response.ok) return false
+/** Runs the callback exclusively across browser tabs (when the Web Locks API is available). */
+function withTabLock<T>(callback: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
+  return locks ? locks.request('wm-token-refresh', callback) : callback()
+}
+
+async function doRefresh(staleAccess: string | null): Promise<RefreshResult> {
+  return withTabLock(async () => {
+    // Refresh tokens are one-time: another tab may have already exchanged ours for a new pair.
+    if (tokens.access && tokens.access !== staleAccess) return 'ok'
+
+    const refreshToken = tokens.refresh
+    if (!refreshToken) return 'rejected'
+
+    let response: Response
+    try {
+      response = await fetch(`${BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      })
+    } catch {
+      return 'offline'
+    }
+
+    if (response.ok) {
       tokens.save((await response.json()) as AuthResponse)
-      return true
-    })
-    .catch(() => false)
+      return 'ok'
+    }
+    // Only an explicit "no" from the server ends the session; 5xx or a proxy error is temporary.
+    return response.status === 401 || response.status === 403 ? 'rejected' : 'offline'
+  })
+}
+
+function refreshTokens(staleAccess: string | null): Promise<RefreshResult> {
+  // Single-flight: parallel requests wait for the same refresh.
+  refreshing ??= doRefresh(staleAccess)
+    .catch((): RefreshResult => 'offline')
     .finally(() => {
       setTimeout(() => (refreshing = null), 0)
     })
@@ -109,8 +133,10 @@ export async function request<T>(path: string, options: RequestOptions = {}, ret
     throw new ApiError(0, 'network')
   }
 
-  if (response.status === 401 && options.auth !== false && !retried && tokens.refresh) {
-    if (await refreshTokens()) return request<T>(path, options, true)
+  if (response.status === 401 && options.auth !== false && !retried && access) {
+    const refreshed = await refreshTokens(access)
+    if (refreshed === 'ok') return request<T>(path, options, true)
+    if (refreshed === 'offline') throw new ApiError(0, 'network')
     tokens.clear()
     unauthorizedListeners.forEach((listener) => listener())
   }
@@ -118,7 +144,14 @@ export async function request<T>(path: string, options: RequestOptions = {}, ret
   if (response.status === 204) return undefined as T
 
   const text = await response.text()
-  const data = text ? JSON.parse(text) : undefined
+  let data: unknown
+  try {
+    data = text ? JSON.parse(text) : undefined
+  } catch {
+    // Not JSON: an error page of a proxy (502/504) while the backend is restarting.
+    if (response.ok) throw new ApiError(response.status, 'Unexpected response of the server.')
+    throw new ApiError(response.status >= 500 ? 0 : response.status, response.statusText || 'network')
+  }
 
   if (!response.ok) {
     const body = data as ApiErrorBody | undefined

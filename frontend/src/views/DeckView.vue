@@ -2,9 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import {
-  ArrowLeft, BadgeCheck, Copy, Globe, Heart, Lock, Pencil, Play, Plus, Search, Settings, Trash2, Upload,
-} from 'lucide-vue-next'
+import { ArrowLeft, BadgeCheck, Copy, Download, Globe, Heart, Lock, Pencil, Play, Plus, RotateCcw, Search, Settings, Trash2, Upload } from 'lucide-vue-next'
 import CardEditorModal from '@/components/CardEditorModal.vue'
 import DeckFormModal from '@/components/DeckFormModal.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -19,6 +17,7 @@ import { useUiStore } from '@/stores/ui'
 import { useErrorToast } from '@/composables/useErrorToast'
 import { celebrate } from '@/composables/useCelebrate'
 import { formatRelative } from '@/utils/format'
+import { cardsToCsv, downloadText, safeFileName } from '@/utils/exportCsv'
 
 const props = defineProps<{ id: string }>()
 
@@ -97,6 +96,33 @@ async function removeCard(card: CardWithProgress) {
     showError(e)
   }
 }
+
+function exportCsv() {
+  if (!deck.value || !cards.value.length) return
+  downloadText(safeFileName(deck.value.title, 'csv'), cardsToCsv(cards.value))
+  ui.toast(t('cards.exported', { n: cards.value.length }), 'success')
+}
+
+async function resetProgress() {
+  if (!deck.value) return
+  const ok = await ui.confirm({
+    title: t('deck.resetProgress'),
+    text: t('deck.resetProgressConfirm', { title: deck.value.title }),
+    danger: true,
+    confirmText: t('deck.resetProgress'),
+  })
+  if (!ok) return
+  try {
+    await deckApi.resetProgress(deck.value.id)
+    await reloadCards()
+    stats.refresh()
+    ui.toast(t('deck.progressReset'), 'success')
+  } catch (e) {
+    showError(e)
+  }
+}
+
+const hasProgress = computed(() => !!progress.value && progress.value.learningCards + progress.value.knownCards > 0)
 
 async function onImported() {
   importing.value = false
@@ -244,9 +270,13 @@ onMounted(load)
       <section class="glass card-pad stack">
         <div class="section-head">
           <h2>{{ $t('deck.cards') }} <span class="badge">{{ cards.length }}</span></h2>
-          <div v-if="canEdit" class="row">
+          <div class="row head-actions">
+            <button v-if="hasProgress" class="btn btn-ghost btn-sm" type="button" @click="resetProgress"><RotateCcw :size="16" /> {{ $t('deck.resetProgress') }}</button>
+            <button v-if="cards.length" class="btn btn-ghost btn-sm" type="button" @click="exportCsv"><Download :size="16" /> {{ $t('cards.export') }}</button>
+            <template v-if="canEdit">
             <button class="btn btn-ghost btn-sm" type="button" @click="importing = true"><Upload :size="16" /> {{ $t('cards.import') }}</button>
             <button class="btn btn-primary btn-sm" type="button" @click="openEditor()"><Plus :size="16" /> {{ $t('cards.addCard') }}</button>
+            </template>
           </div>
         </div>
 

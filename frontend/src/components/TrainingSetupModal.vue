@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeftRight, Headphones, Keyboard, Layers, ListChecks, Play } from 'lucide-vue-next'
 import type { DeckProgress, TrainingMode, TrainingScope } from '@/api'
 import { usePrefsStore } from '@/stores/prefs'
 import { useTrainingStore } from '@/stores/training'
 import { useErrorToast } from '@/composables/useErrorToast'
+import { speechSupported } from '@/composables/useSpeech'
 import BaseModal from './BaseModal.vue'
 
 const props = defineProps<{ open: boolean; deckId: string; progress?: DeckProgress | null }>()
@@ -32,6 +33,19 @@ const hint = computed(() => {
   return `${t('deck.due')}: ${p.dueCards} · ${t('deck.new')}: ${p.newCards}`
 })
 
+function available(mode: TrainingMode) {
+  return mode !== 'listening' || speechSupported
+}
+
+// The saved mode may be unavailable on this device (no speech synthesis in the browser).
+watch(
+  () => props.open,
+  (open) => {
+    if (open && !available(prefs.trainingMode)) prefs.trainingMode = 'flashcards'
+  },
+  { immediate: true },
+)
+
 async function start() {
   starting.value = true
   try {
@@ -52,10 +66,12 @@ async function start() {
         <span class="label">{{ $t('training.mode') }}</span>
         <div class="modes">
           <button v-for="m in modes" :key="m.value" type="button" class="mode" :data-color="m.color"
-                  :class="{ active: prefs.trainingMode === m.value }" @click="prefs.trainingMode = m.value">
+                  :class="{ active: prefs.trainingMode === m.value }" :disabled="!available(m.value)"
+                  :title="available(m.value) ? undefined : $t('profile.speechUnsupported')"
+                  @click="prefs.trainingMode = m.value">
             <span class="mode-icon"><component :is="m.icon" :size="24" /></span>
             <b>{{ $t(`training.modes.${m.value}`) }}</b>
-            <span class="tiny muted">{{ $t(`training.modeHints.${m.value}`) }}</span>
+            <span class="tiny muted">{{ available(m.value) ? $t(`training.modeHints.${m.value}`) : $t('profile.speechUnsupported') }}</span>
           </button>
         </div>
       </div>
@@ -125,8 +141,13 @@ async function start() {
   transition: all 0.3s var(--ease-spring);
 }
 
-.mode:hover {
+.mode:hover:not(:disabled) {
   transform: translateY(-3px);
+}
+
+.mode:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .mode.active {

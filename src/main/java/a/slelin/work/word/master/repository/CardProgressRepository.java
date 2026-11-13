@@ -6,6 +6,7 @@ import a.slelin.work.word.master.repository.projection.DeckCount;
 import a.slelin.work.word.master.repository.projection.DeckStatusCount;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -71,6 +72,17 @@ public interface CardProgressRepository extends JpaRepository<CardProgress, UUID
             """)
     List<CardProgress> findHardestInDeck(@Param("userId") UUID userId, @Param("deckId") UUID deckId,
                                          Pageable pageable);
+
+    /**
+     * Forgets everything the user has learned in the deck.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+            delete from card_progress p
+            using card c
+            where c.id = p.card_id and c.deck_id = :deckId and p.user_id = :userId
+            """, nativeQuery = true)
+    int deleteByUserAndDeck(@Param("userId") UUID userId, @Param("deckId") UUID deckId);
 
     /**
      * Planned review times before the given moment (for the review forecast).

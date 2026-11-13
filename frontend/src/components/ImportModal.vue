@@ -33,8 +33,11 @@ async function submit() {
   if (!parsed.value.cards.length) return
   saving.value = true
   try {
+    const sent = parsed.value.cards.length
     const created = await deckApi.addCards(props.deckId, parsed.value.cards)
-    ui.toast(t('import.done', { n: created.length }), 'success')
+    const duplicates = sent - created.length
+    if (created.length) ui.toast(t('import.done', { n: created.length }), 'success')
+    if (duplicates > 0) ui.toast(t('import.duplicates', { n: duplicates }), 'info')
     emit('imported', created.length)
   } catch (e) {
     showError(e)
@@ -47,7 +50,7 @@ async function submit() {
 <template>
   <BaseModal :open="open" :title="$t('import.title')" wide @close="emit('close')">
     <div class="stack">
-      <p class="muted small">{{ $t('import.hint') }}</p>
+      <p class="muted small">{{ $t('import.hint', { pipe: '|' }) }}</p>
       <textarea v-model="text" class="textarea mono" rows="8" :placeholder="$t('import.placeholder')" />
       <label class="btn btn-ghost btn-sm file">
         <Upload :size="16" /> .txt / .csv / .tsv

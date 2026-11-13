@@ -133,4 +133,36 @@ class SpacedRepetitionTest {
         SpacedRepetition.applyRelearning(progress, Grade.GOOD, NOW);
         assertEquals(Status.LEARNING, progress.getStatus());
     }
+
+    @Test
+    @DisplayName("Answers ahead of schedule do not inflate the interval, but a miss still resets the card")
+    void earlyReviewKeepsSchedule() {
+        CardProgress progress = fresh();
+        assertFalse(SpacedRepetition.isEarly(progress, NOW));
+
+        SpacedRepetition.apply(progress, Grade.GOOD, NOW);
+        LocalDateTime planned = progress.getNextReviewAt();
+        assertTrue(SpacedRepetition.isEarly(progress, NOW.plusHours(1)));
+        assertFalse(SpacedRepetition.isEarly(progress, planned));
+
+        SpacedRepetition.applyEarlyReview(progress, Grade.EASY, NOW.plusHours(1));
+        assertEquals(planned, progress.getNextReviewAt());
+        assertEquals(1, progress.getRepetitions());
+        assertEquals(1, progress.getIntervalDays());
+        assertEquals(2, progress.getCorrectCount());
+        assertEquals(Status.LEARNING, progress.getStatus());
+
+        SpacedRepetition.applyEarlyReview(progress, Grade.AGAIN, NOW.plusHours(2));
+        assertEquals(0, progress.getRepetitions());
+        assertEquals(NOW.plusHours(2).plusMinutes(SpacedRepetition.RELEARN_DELAY_MINUTES), progress.getNextReviewAt());
+    }
+
+    @Test
+    @DisplayName("A card that is being relearned (interval 0) is never treated as an early review")
+    void relearningCardIsNotEarly() {
+        CardProgress progress = fresh();
+        SpacedRepetition.apply(progress, Grade.AGAIN, NOW);
+
+        assertFalse(SpacedRepetition.isEarly(progress, NOW.plusMinutes(1)));
+    }
 }

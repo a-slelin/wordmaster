@@ -53,6 +53,13 @@ public interface DeckService {
     DeckProgressResponse getProgress(@NotNull Actor actor, @NotNull UUID deckId);
 
     /**
+     * Removes the learning progress of the actor in the deck: all cards become new again.
+     */
+    @Valid
+    @NotNull
+    DeckProgressResponse resetProgress(@NotNull Actor actor, @NotNull UUID deckId);
+
+    /**
      * Deck the actor may read: own deck, public deck or any deck for admin.
      */
     @NotNull

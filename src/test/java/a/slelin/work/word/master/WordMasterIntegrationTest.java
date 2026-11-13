@@ -369,6 +369,56 @@ class WordMasterIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void repeatingRoundTheSameDayDoesNotMakeCardsKnown() throws Exception {
+        String deckId = createDeck("Cram", Map.of("sun", "солнце"));
+
+        JsonNode last = null;
+        for (int round = 0; round < 4; round++) {
+            JsonNode session = read(perform(post("/api/training/sessions"),
+                    Map.of("deckId", deckId, "mode", "flashcards", "scope", "all"), token)
+                    .andExpect(status().isCreated()));
+            last = answer(session.get("sessionId").asString(),
+                    Map.of("cardId", session.get("firstCard").get("cardId").asString(), "grade", "easy"));
+        }
+
+        assertEquals("learning", last.get("updatedProgress").get("status").asString());
+        assertEquals(3, last.get("updatedProgress").get("intervalDays").asInt());
+        // Timestamps carry the offset, so every client shows them in its own time zone.
+        assertTrue(last.get("updatedProgress").get("nextReviewAt").asString()
+                .matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[+-]\\d{2}:\\d{2})"));
+    }
+
+    @Test
+    void importSkipsDuplicatesAndProgressCanBeReset() throws Exception {
+        String deckId = createDeck("Colors", Map.of("red", "красный"));
+
+        JsonNode created = read(perform(post("/api/decks/" + deckId + "/cards/bulk"), Map.of("cards", List.of(
+                Map.of("word", " RED ", "translation", "Красный"),
+                Map.of("word", "blue", "translation", "синий"),
+                Map.of("word", "blue", "translation", "синий"),
+                Map.of("word", "blue", "translation", "голубой"))), token).andExpect(status().isCreated()));
+        assertEquals(2, created.size());
+
+        created = read(perform(post("/api/decks/" + deckId + "/cards/bulk"), Map.of("skipDuplicates", false,
+                "cards", List.of(Map.of("word", "red", "translation", "красный"))), token)
+                .andExpect(status().isCreated()));
+        assertEquals(1, created.size());
+
+        JsonNode session = read(perform(post("/api/training/sessions"),
+                Map.of("deckId", deckId, "mode", "flashcards", "limit", 2), token).andExpect(status().isCreated()));
+        answer(session.get("sessionId").asString(),
+                Map.of("cardId", session.get("firstCard").get("cardId").asString(), "grade", "easy"));
+
+        JsonNode progress = read(perform(get("/api/decks/" + deckId + "/progress"), null, token)
+                .andExpect(status().isOk()));
+        assertEquals(1, progress.get("learningCards").asInt());
+
+        progress = read(perform(delete("/api/decks/" + deckId + "/progress"), null, token).andExpect(status().isOk()));
+        assertEquals(0, progress.get("learningCards").asInt());
+        assertEquals(4, progress.get("newCards").asInt());
+    }
+
     private String createDeck(String title, Map<String, String> words) throws Exception {
         JsonNode languages = read(perform(get("/api/languages"), null, null).andExpect(status().isOk()));
         JsonNode deck = read(perform(post("/api/decks"), Map.of("title", title,

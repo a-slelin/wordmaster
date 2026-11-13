@@ -291,6 +291,8 @@ export interface UserStats {
   todayReviewed: number
   achievementsUnlocked: number
   achievementsTotal: number
+  /** IANA time zone the days of the user are counted in. */
+  timeZone: string
 }
 
 export interface ActivityDay {

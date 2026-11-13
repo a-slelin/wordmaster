@@ -153,7 +153,11 @@ public class TrainingServiceImpl implements TrainingService {
                         .incorrectCount(0L)
                         .build());
         if (row.getAttempts() == 0) {
-            SpacedRepetition.apply(progress, grade, now);
+            if (SpacedRepetition.isEarly(progress, now)) {
+                SpacedRepetition.applyEarlyReview(progress, grade, now);
+            } else {
+                SpacedRepetition.apply(progress, grade, now);
+            }
         } else {
             // The card was forgotten earlier in this session and is being drilled again.
             SpacedRepetition.applyRelearning(progress, grade, now);

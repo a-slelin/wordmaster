@@ -47,7 +47,7 @@ async function saveAccount() {
   savingAccount.value = true
   accountErrors.value = {}
   try {
-    auth.user = await userApi.update({ username: account.username.trim(), email: account.email.trim() })
+    auth.setUser(await userApi.update({ username: account.username.trim(), email: account.email.trim() }))
     ui.toast(t('common.saved'), 'success')
   } catch (e) {
     if (e instanceof ApiError) {
@@ -66,7 +66,10 @@ async function saveAccount() {
 async function changePassword() {
   savingPassword.value = true
   try {
+    const newPassword = passwords.newPassword
     await userApi.changePassword({ ...passwords })
+    // The server has signed out every device - log this one in again with the new password.
+    if (auth.user) await auth.login(auth.user.username, newPassword).catch(() => undefined)
     passwords.oldPassword = ''
     passwords.newPassword = ''
     ui.toast(t('profile.passwordChanged'), 'success')

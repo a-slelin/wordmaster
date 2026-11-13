@@ -105,6 +105,12 @@ public class DeckController {
         return deckService.getProgress(Actor.of(jwt), id);
     }
 
+    @DeleteMapping("/{id}/progress")
+    @Operation(summary = "Forget the learning progress of the current user in the deck")
+    public DeckProgressResponse resetProgress(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return deckService.resetProgress(Actor.of(jwt), id);
+    }
+
     @GetMapping("/{id}/cards")
     @Operation(summary = "Cards of the deck with the current user's progress")
     public List<CardWithProgressResponse> getCards(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {

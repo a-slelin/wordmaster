@@ -52,6 +52,31 @@ public final class SpacedRepetition {
     }
 
     /**
+     * Whether the card is reviewed ahead of schedule: it has already graduated to day intervals
+     * and its review date has not come yet (the user trains "all cards" or has nothing else to review).
+     */
+    public static boolean isEarly(CardProgress progress, LocalDateTime now) {
+        return progress.getIntervalDays() >= 1
+                && progress.getNextReviewAt() != null
+                && progress.getNextReviewAt().isAfter(now);
+    }
+
+    /**
+     * Applies an answer given ahead of schedule. Remembering a word an hour after the previous review proves
+     * nothing, so a correct answer keeps the schedule as it is (otherwise a few rounds in a row would make
+     * any card "known" for months). A forgotten card is handled as usual.
+     */
+    public static CardProgress applyEarlyReview(CardProgress progress, Grade grade, LocalDateTime now) {
+        if (grade == Grade.AGAIN) {
+            return apply(progress, grade, now);
+        }
+
+        progress.setCorrectCount(progress.getCorrectCount() + 1);
+        progress.setLastReviewedAt(now);
+        return progress;
+    }
+
+    /**
      * Applies a repeated answer to a card that was already forgotten earlier in the same training session.
      * <p>
      * The first answer of the session has already been scheduled by {@link #apply}: the ease factor got its

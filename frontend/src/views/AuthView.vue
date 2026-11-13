@@ -46,7 +46,7 @@ async function submit() {
       await auth.login(form.login.trim(), form.password)
     } else {
       await auth.register(form.username.trim(), form.email.trim(), form.password)
-      ui.toast(`${t('auth.registerTitle')} ✓`, 'success', '🎉')
+      ui.toast(t('auth.registered'), 'success', '🎉')
     }
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/home'
     router.replace(redirect)
@@ -57,6 +57,8 @@ async function submit() {
         const field = (e.body?.details?.field as string) ?? ''
         errors.value = field === 'email' ? { email: t('auth.emailTaken') } : { username: t('auth.usernameTaken') }
       } else if (e.status === 0) ui.toast(t('common.networkError'), 'error')
+      else if (e.status === 429) errors.value = { password: t('errors.tooManyRequests') }
+      else if (e.status >= 500) ui.toast(t('errors.server'), 'error')
       else errors.value = { ...e.fieldErrors, ...(Object.keys(e.fieldErrors).length ? {} : { password: e.message }) }
     }
   } finally {

@@ -260,6 +260,14 @@ public class DeckServiceImpl implements DeckService {
     }
 
     @Override
+    @Transactional
+    public DeckProgressResponse resetProgress(Actor actor, UUID deckId) {
+        Deck deck = getReadableDeck(actor, deckId);
+        cardProgressRepository.deleteByUserAndDeck(actor.id(), deck.getId());
+        return progress(actor, deck.getId());
+    }
+
+    @Override
     public Deck getReadableDeck(Actor actor, UUID deckId) {
         Deck deck = findDeck(deckId);
         if (Boolean.TRUE.equals(deck.getIsPublic()) || actor.canEdit(deck.getOwner().getId())) {

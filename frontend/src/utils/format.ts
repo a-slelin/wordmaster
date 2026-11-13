@@ -1,4 +1,8 @@
-/** Backend sends LocalDateTime as "dd.MM.yyyy HH:mm:ss" and LocalDate as ISO "yyyy-MM-dd". */
+/**
+ * Backend sends timestamps as ISO-8601 with an offset ("2026-10-03T12:00:00+03:00") and dates as "yyyy-MM-dd".
+ * A date without time is a calendar day, so it is created in the local time zone (not at UTC midnight).
+ * "dd.MM.yyyy HH:mm:ss" is the format of older versions of the API.
+ */
 export function parseDate(value?: string | null): Date | null {
   if (!value) return null
   const match = /^(\d{2})\.(\d{2})\.(\d{4})(?: (\d{2}):(\d{2}):(\d{2}))?$/.exec(value)
