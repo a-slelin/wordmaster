@@ -1,11 +1,49 @@
 # agent/rag.py — Лаб. 4: поиск по документации (keyword из лаб. 3 → поиск по смыслу)
 
+import os
 import re
+import sys
+import time
 from pathlib import Path
+
+import numpy as np
+from dotenv import load_dotenv
+from openai import OpenAI
 
 AGENT_DIR = Path(__file__).parent.resolve()
 WORKSPACE = AGENT_DIR / "workspace"   # песочница агента
 DOCS_DIR = WORKSPACE / "docs"         # корпус для search_docs
+
+load_dotenv(AGENT_DIR / ".env")
+
+# Эмбеддинги: по умолчанию Ollama локально (OpenAI-совместимый /v1/embeddings).
+# Ключ обязателен для клиента OpenAI, но Ollama его игнорирует.
+EMBED_BASE_URL = os.getenv("EMBED_BASE_URL", "http://localhost:11434/v1")
+EMBED_API_KEY = os.getenv("EMBED_API_KEY", "ollama")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "bge-m3")
+
+embed_client = OpenAI(base_url=EMBED_BASE_URL, api_key=EMBED_API_KEY)
+
+
+# ======================= ШАГ 1: ЭМБЕДДИНГ И КОСИНУС =======================
+
+def embed(texts: list[str]) -> list[list[float]]:
+    """Эмбеддинги для списка текстов ОДНИМ запросом. Порядок векторов = порядок texts."""
+    if not texts:
+        return []
+    response = embed_client.embeddings.create(model=EMBED_MODEL, input=texts)
+    data = sorted(response.data, key=lambda d: d.index)  # на всякий случай восстанавливаем порядок
+    return [d.embedding for d in data]
+
+
+def cosine(a, b) -> float:
+    """Косинусная близость: cos = a·b / (|a|·|b|). 1 — одно направление, 0 — ортогональны."""
+    a = np.asarray(a, dtype=np.float32)
+    b = np.asarray(b, dtype=np.float32)
+    norm = np.linalg.norm(a) * np.linalg.norm(b)
+    if norm == 0:
+        return 0.0
+    return float(np.dot(a, b) / norm)
 
 
 # ======================= KEYWORD-ПОИСК (из лаб. 3, для сравнения) =======================
@@ -59,6 +97,49 @@ def keyword_search_docs(query: str, limit: int = 3) -> str:
                        for score, rel, para in hits[:limit])
 
 
+# ======================= ДЕМО ДЛЯ ПРОВЕРКИ ШАГОВ =======================
+
+# 6 пар фраз из предметной области WordMaster: (тип пары, фраза A, фраза B)
+PAIRS = [
+    ("синонимы", "удалить колоду", "стереть набор карточек"),
+    ("синонимы", "забыл пароль от аккаунта", "не получается войти в профиль"),
+    ("общее слово", "скопировать колоду себе", "скопировать текст в буфер обмена"),
+    ("общее слово", "карточка со словом", "банковская карточка"),
+    ("не связаны", "тренировка неправильных глаголов", "погода в Москве"),
+    ("не связаны", "сделать колоду публичной", "рецепт борща"),
+]
+
+
+def demo_pairs() -> None:
+    """Шаг 1: длина вектора и таблица косинусов для 6 пар (один вызов embed на все фразы)."""
+    print(f"Модель эмбеддингов: {EMBED_MODEL} ({EMBED_BASE_URL})")
+    vec = embed(["удалить аккаунт"])[0]
+    print(f"Длина вектора для одного текста: {len(vec)}")
+
+    phrases = [p for _, a, b in PAIRS for p in (a, b)]  # 12 фраз подряд: A1, B1, A2, B2, ...
+    t0 = time.perf_counter()
+    vectors = embed(phrases)  # ОДИН запрос на все фразы
+    print(f"embed({len(phrases)} фраз) одним запросом: {time.perf_counter() - t0:.2f} с\n")
+
+    print("| N | Тип пары    | Фраза A                          | Фраза B                           | cos   |")
+    print("|---|-------------|----------------------------------|-----------------------------------|-------|")
+    for i, (kind, a, b) in enumerate(PAIRS):
+        cos = cosine(vectors[2 * i], vectors[2 * i + 1])
+        print(f"| {i + 1} | {kind:<11} | {a:<32} | {b:<33} | {cos:.3f} |")
+
+    # Ориентир из задания: «удалить аккаунт» / «стереть профиль» ≈ 0.78, «… / погода в Москве» ≈ 0.41
+    ref = embed(["удалить аккаунт", "стереть профиль", "погода в Москве"])
+    print(f"\nОриентир: 'удалить аккаунт' / 'стереть профиль' = {cosine(ref[0], ref[1]):.3f}, "
+          f"'удалить аккаунт' / 'погода в Москве' = {cosine(ref[0], ref[2]):.3f}")
+
+
 if __name__ == "__main__":
-    # Быстрая проверка шага 0: старый поиск работает из нового модуля
-    print(keyword_search_docs("тема по умолчанию", 2))
+    # py agent/rag.py keyword — шаг 0: старый поиск работает из нового модуля
+    # py agent/rag.py pairs   — шаг 1: длина вектора и косинусы 6 пар
+    command = sys.argv[1] if len(sys.argv) > 1 else "keyword"
+    if command == "keyword":
+        print(keyword_search_docs("тема по умолчанию", 2))
+    elif command == "pairs":
+        demo_pairs()
+    else:
+        print(f"Неизвестная команда '{command}'. Доступно: keyword, pairs")
