@@ -25,6 +25,7 @@
 | [Шаг 4. Векторный `search_docs`](#шаг-4-векторный-search_docs) | порог `MIN_SCORE`, промпт, 4 попытки агентного сценария |
 | [Шаг 5. keyword vs vector](#шаг-5-сравнение-keyword-vs-vector) | `eval_search.py`, таблица hit@1 / hit@3, бонус hybrid |
 | [Шаг 6. Эксперименты и вопросы](#шаг-6-эксперименты-и-вопросы-для-отчёта) | размер фрагмента, prompt injection, токены, вопросы 4–5 |
+| [⭐ Бонус: Chroma](#-бонус-chroma) | тот же индекс в Chroma, сравнение с numpy, агент на Chroma |
 | [📊 Итоги](#-итоги) | структура, схема поиска, сводные таблицы |
 | [❓ Ответы на вопросы — кратко](#-ответы-на-вопросы--кратко) | 5 вопросов шага 6 в одной таблице |
 | [⚠️ Ограничения и что улучшить](#️-ограничения-и-что-улучшить) | |
@@ -41,6 +42,7 @@ lab4: step 4 — vector search_docs (top-k cosine, MIN_SCORE, source refs) + sys
 lab4: step 5 — eval_search.py: keyword vs vector vs hybrid (hit@1, hit@3)
 lab4: step 6 — experiments: chunk size, prompt injection, tokens (result length, SEARCH_IMPL switch)
 lab4: report — final LAB4.md
+lab4: bonus — Chroma persistent index with own bge-m3 embeddings, compare with numpy
 ```
 
 ## Окружение
@@ -64,7 +66,7 @@ lab4: report — final LAB4.md
 | `EMBED_MODEL` | `bge-m3` | 1 | модель эмбеддингов — **одна для индекса и запросов** |
 | `CHUNK_SIZE` / `CHUNK_OVERLAP` | `800` / `150` | 2 | размер окна и перекрытие |
 | `MIN_SCORE` | `0.49` | 4 | порог косинуса, ниже — «нет похожих фрагментов» |
-| `SEARCH_IMPL` | `vector` | 6 | `keyword` — вернуть агенту старый поиск (для сравнения) |
+| `SEARCH_IMPL` | `vector` | 6, бонус | `keyword` — старый поиск (для сравнения), `chroma` — поиск через Chroma |
 
 ## 🗺️ Карта изменений
 
@@ -128,8 +130,11 @@ lab4: report — final LAB4.md
 
 | Файл | Изменение |
 |---|---|
+| `agent/chroma_store.py` 🆕 (бонус) | [`get_collection()`](https://github.com/a-slelin/wordmaster/blob/lab4/agent/chroma_store.py#L24) — коллекция Chroma с тем же `docs_hash`, [`chroma_by_vector()`](https://github.com/a-slelin/wordmaster/blob/lab4/agent/chroma_store.py#L66), [`chroma_search_docs()`](https://github.com/a-slelin/wordmaster/blob/lab4/agent/chroma_store.py#L96) — инструмент поверх Chroma, [`compare()`](https://github.com/a-slelin/wordmaster/blob/lab4/agent/chroma_store.py#L101) — сравнение с numpy |
+| `agent/rag.py` (бонус) | `search_docs(query, limit, *, searcher=None)` — можно подставить другой поиск top-k; валидация, порог и формат общие |
+| `agent/agent.py` (бонус) | `SEARCH_FUNCTION`: `SEARCH_IMPL=chroma` подключает `chroma_search_docs` (импорт `chromadb` только в этом режиме) |
 | `.gitignore` | + `agent/index/` |
-| `agent/requirements.txt` | + `numpy==2.5.5` |
+| `agent/requirements.txt` | + `numpy==2.5.5`, + `chromadb==1.5.9` (бонус, нужен только для режима chroma) |
 | `agent/.env.example` | + `EMBED_*`, `CHUNK_SIZE`, `CHUNK_OVERLAP`, `MIN_SCORE` |
 | `agent/workspace/docs/` | + `api.md`, `security.md`, `architecture.md`, `roadmap.md`, `catalog.md` (было 5 файлов, стало 10) |
 
@@ -1030,6 +1035,109 @@ INDEX: cache hit, 48 chunks, 0.02 s
 
 ---
 
+## ⭐ Бонус: Chroma
+
+**Что сделано** — новый модуль `agent/chroma_store.py`, тот же поиск поверх векторной БД Chroma (`chromadb 1.5.9`):
+
+| Решение | Как и почему |
+|---|---|
+| `chromadb.PersistentClient(path="agent/index/chroma")` | постоянное хранилище внутри `agent/index/` — вне песочницы и не в git (правило `.gitignore` уже есть) |
+| **свои эмбеддинги**, `embedding_function=None` | в Chroma кладём готовые векторы bge-m3, запрос тоже эмбеддим bge-m3 через `embed()`. Встроенная модель Chroma (англоязычная all-MiniLM) не используется — иначе индекс и запрос считались бы разными моделями (вопрос 4) |
+| `metadata={"hnsw:space": "cosine", ...}` | метрика — косинус; Chroma возвращает расстояние `1 − cos`, переводим обратно в cos |
+| `docs_hash` в метаданных коллекции | тот же хэш, что у JSON-индекса: совпал → `CHROMA: cache hit`, нет → коллекция пересоздаётся из векторов JSON-индекса (`CHROMA: rebuilt`) — bge-m3 повторно не вызывается |
+| `chroma_search_docs()` = `search_docs(..., searcher=chroma_search)` | валидация, `MIN_SCORE`, формат `[файл § раздел] cos=…` и строка «Источник» — общие с numpy-версией, кода не дублируем |
+| `SEARCH_IMPL=chroma` в `agent.py` | агент получает Chroma под тем же именем `search_docs`; `chromadb` импортируется только в этом режиме |
+| `compare()` | `py agent/chroma_store.py`: один эмбеддинг запроса на оба поиска → сравниваются только сами поиски |
+
+**Лог (первый запуск — rebuilt):**
+```
+PS> py agent/chroma_store.py
+INDEX: rebuilt, 48 chunks, 7.88 s (хэш не совпал)
+CHROMA: rebuilt, 48 chunks, 8.51 s
+INDEX: cache hit, 48 chunks, 0.02 s
+Модель: bge-m3, size=800, overlap=150, MIN_SCORE=0.49
+
+| N  | Вопрос | numpy top-3 (cos) | Chroma top-3 (cos) | top-3 совпал |
+|----|--------|-------------------|--------------------|--------------|
+| 1  | как стереть свой профиль? | security 0.624, api 0.480, catalog 0.480 | security 0.624, api 0.480, catalog 0.480 | да |
+| 2  | сколько раз нужно угадать слово, чтобы оно считалось запомненным? | training 0.581, faq 0.520, training 0.504 | training 0.581, faq 0.520, training 0.504 | да |
+| 3  | можно ли отметить, что мне понравился чужой набор слов? | features 0.542, about 0.509, catalog 0.490 | features 0.542, about 0.509, catalog 0.490 | да |
+| 4  | будут ли слова повторяться через растущие промежутки времени? | features 0.500, training 0.496, api 0.493 | features 0.500, training 0.496, api 0.493 | да |
+| 5  | что будет, если пять раз подряд ошибиться при входе? | security 0.515, api 0.473, security 0.470 | security 0.515, api 0.473, security 0.470 | да |
+| 6  | на каком языке и фреймворке написан сервер? | architecture 0.605, architecture 0.550, architecture 0.540 | architecture 0.605, architecture 0.550, architecture 0.540 | да |
+| 7  | что означает ответ 401? | api 0.542, security 0.457, training 0.437 | api 0.542, security 0.457, training 0.437 | да |
+| 8  | какой эндпоинт выдаёт следующую карточку для тренировки? | api 0.584, api 0.541, training 0.538 | api 0.584, api 0.541, training 0.538 | да |
+| 9  | сколько живёт JWT-токен? | security 0.589, security 0.424, security 0.369 | security 0.589, security 0.424, security 0.369 | да |
+| 10 | можно ли загрузить слова из CSV? | faq 0.735, about 0.512, api 0.485 | faq 0.735, about 0.512, api 0.485 | да |
+
+top-3 совпал: 10/10; макс. |cos_numpy − cos_chroma| = 3.58e-07
+hit@1 / hit@3: numpy 0.8 / 0.9; Chroma 0.8 / 0.9
+время поиска без эмбеддинга запроса, всего на 10 вопросов: numpy 15.7 ms, Chroma 40.3 ms
+на диске: JSON 1088 KB, Chroma 1002 KB (agent\index\chroma)
+```
+**Повторный запуск — cache hit** (таблица та же):
+```
+PS> py agent/chroma_store.py
+CHROMA: cache hit, 48 chunks, 0.08 s
+INDEX: cache hit, 48 chunks, 0.02 s
+...
+top-3 совпал: 10/10; макс. |cos_numpy − cos_chroma| = 3.58e-07
+hit@1 / hit@3: numpy 0.8 / 0.9; Chroma 0.8 / 0.9
+время поиска без эмбеддинга запроса, всего на 10 вопросов: numpy 14.3 ms, Chroma 37.8 ms
+```
+**Агент на Chroma** (`$env:SEARCH_IMPL="chroma"`, сценарий из шага 4):
+```
+search_docs: chroma
+Вы: Найди в документации тему тренировки по умолчанию и дай мне карточку по этой теме
+  → search_docs({"query":"тема тренировки по умолчанию","limit":5})
+CHROMA: cache hit, 48 chunks, 0.10 s
+  ← [training.md § Тема по умолчанию] cos=0.63 Если пользователь не назвал тему, тренировка начинается с темы travel: ...
+  → get_random_card({"topic":"travel"})
+  ← {"card_id": 5, "word": "departure", "translation": "отправление", "topic": "travel"}
+  [источник дописан кодом: модель не указала [training.md § Тема по умолчанию]]
+
+Агент: По документации тема тренировки по умолчанию — **travel** (слова для поездок).
+Вот твоя карточка:
+**departure**
+Пришли перевод, когда готов.
+
+Источник: [training.md § Тема по умолчанию]
+
+Вы: отправить
+[шаг 1] usage: prompt=2653, completion=13, оценка/факт = 0.74
+Агент:                                          ← пустой ответ модели
+```
+`git status` после запусков не показывает `agent/index/` — Chroma в git не попала.
+
+**Сравнение numpy + JSON и Chroma:**
+
+| Критерий | numpy + JSON | Chroma |
+|---|---|---|
+| результаты top-3 (10 вопросов) | эталон | **идентичны 10/10** |
+| косинусы | эталон | расхождение ≤ 3.6·10⁻⁷ — округление float32 |
+| hit@1 / hit@3 | 0.8 / 0.9 | 0.8 / 0.9 |
+| поиск, 10 запросов (без эмбеддинга) | **14–16 ms** (~1.5 ms на запрос) | 38–40 ms (~3.9 ms на запрос) — в ~2.6 раза медленнее |
+| загрузка с диска (cache hit) | **0.02 s** | 0.08 s |
+| построение (без учёта эмбеддингов) | запись JSON | ~0.6 s (8.51 s − 7.88 s на эмбеддинги) |
+| размер на диске | 1088 KB | 1002 KB |
+| зависимости | `numpy` | `chromadb` + ~десятки пакетов |
+| что даёт сверху | — | HNSW-индекс, `where`-фильтры по метаданным, `upsert`/`delete` по id, конкурентный доступ |
+
+**Выводы по бонусу:**
+1. **Результат поиска не изменился** — и это правильно: те же векторы, та же метрика. На 48 фрагментах HNSW
+   находит те же соседи, что и полный перебор (приближённость ANN на таком объёме не проявляется). Агентный
+   сценарий на Chroma прошёл так же, как на numpy: цепочка `search_docs → get_random_card`, источник дописан кодом.
+2. **На маленьком корпусе Chroma только медленнее**: накладные расходы клиента и SQLite больше, чем одно
+   умножение матрицы 48×1024 на вектор в numpy. Это практическое подтверждение ответа на вопрос 5: векторная БД
+   окупается не на десятках, а на десятках-сотнях тысяч фрагментов, при инкрементальных обновлениях и фильтрах.
+3. **Главное правило RAG сохранено и в БД**: эмбеддинги считает одна модель (bge-m3) и для индекса, и для запроса;
+   встроенную модель Chroma пришлось явно отключить (`embedding_function=None`), иначе это был бы сценарий из
+   вопроса 4 — молча неправильный поиск.
+4. Пустой ответ модели на «отправить» — особенность бесплатной чат-модели, к Chroma не относится (поиск в этом
+   ходе не вызывался); записано в ограничения.
+
+---
+
 ## 📊 Итоги
 
 ### Итоговая структура
@@ -1048,8 +1156,10 @@ wordmaster/
     ├── LAB2.md, LAB3.md       # отчёты прошлых лаб
     ├── LAB4.md                # 🆕 этот отчёт
     ├── sessions/              # из лаб. 3, *.json НЕ в git
+    ├── chroma_store.py        # 🆕 бонус: тот же индекс в Chroma + сравнение с numpy
     ├── index/                 # 🆕 НЕ в git: индекс эмбеддингов вне песочницы
-    │   └── docs_index.json    #     hash, model, size, overlap, chunks[], vectors[] (~1 MB)
+    │   ├── docs_index.json    #     hash, model, size, overlap, chunks[], vectors[] (~1 MB)
+    │   └── chroma/            #     бонус: PersistentClient Chroma (~1 MB)
     └── workspace/             # песочница агента
         └── docs/              # корпус для search_docs — 10 файлов
             ├── about.md  api.md  architecture.md  catalog.md  data-model.md
@@ -1089,7 +1199,7 @@ wordmaster/
 | 5 | таблица hit@1 / hit@3 + вывод | ✅ keyword 0.6 / 0.7 → **vector 0.8 / 0.9**, hybrid 0.8 / 0.9 |
 | 6 | 5 вопросов | ✅ см. ниже |
 | бонус | гибридный поиск (RRF) | ✅ строка hybrid в таблицах шагов 5–6 |
-| бонус | Chroma | — не делали |
+| бонус | Chroma | ✅ top-3 совпал 10/10, |Δcos| ≤ 3.6·10⁻⁷, hit@k как у numpy; поиск в ~2.6 раза медленнее на 48 векторах |
 
 ### Сводная таблица качества поиска (10 вопросов, hit@1 / hit@3)
 
@@ -1141,7 +1251,8 @@ wordmaster/
 | `docs/` внутри песочницы: агент может сам «отравить» корпус через `write_file` | шаг 6, вопрос 2 | вынести `docs/` из `workspace/` или запретить запись в `docs/` |
 | Несовпадение размерности индекса и модели даёт сообщение «модель недоступна» | шаг 6, вопрос 4 | проверять `index["model"]` и размерность явно, отдельный текст ошибки |
 | Порог подобран под bge-m3 и size=800 | шаги 4, 6 | хранить `MIN_SCORE` вместе с индексом и пересчитывать калибровку при смене модели |
-| Chroma (бонус) не сделан | — | `chromadb.PersistentClient(path="agent/index/chroma")` с собственными эмбеддингами |
+| Chroma-коллекция пересоздаётся целиком при любой правке docs (как и JSON) | бонус | `upsert`/`delete` по id фрагмента — то, ради чего БД и нужна |
+| Модель иногда возвращает пустой ответ | бонус, сессия `lab4-chroma` (ответ «отправить») | повторить запрос, если `content` пустой и нет `tool_calls` |
 
 ---
 

@@ -201,8 +201,9 @@ def vector_search(query: str, k: int = 3) -> list[tuple[float, dict]]:
     return [(float(scores[i]), index["chunks"][i]) for i in top]
 
 
-def search_docs(query: str, limit: int = 3) -> str:
-    """Векторный поиск по docs/. Интерфейс для модели прежний: query, limit 1–5."""
+def search_docs(query: str, limit: int = 3, *, searcher=None) -> str:
+    """Векторный поиск по docs/. Интерфейс для модели прежний: query, limit 1–5.
+    searcher — чем искать top-k (по умолчанию numpy-индекс; бонус: chroma_store.chroma_search)."""
     if not query or not query.strip():
         return "ОШИБКА: пустой запрос"
     try:
@@ -215,7 +216,7 @@ def search_docs(query: str, limit: int = 3) -> str:
         return "ОШИБКА: docs/ пуста — нет .md файлов для поиска"
 
     try:
-        hits = vector_search(query.strip(), limit)
+        hits = (searcher or vector_search)(query.strip(), limit)
     except Exception as e:  # Ollama не запущена, модель не скачана и т. п.
         return f"ОШИБКА: эмбеддинг-модель {EMBED_MODEL} недоступна ({e})"
     if not hits:

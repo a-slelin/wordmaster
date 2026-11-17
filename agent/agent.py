@@ -278,7 +278,13 @@ def save_result(card_id: int, correct: bool) -> str:
 from rag import keyword_search_docs, search_docs
 
 # Шаг 6: какой поиск отдать агенту под именем search_docs — для сравнения токенов keyword vs vector
-SEARCH_IMPL = os.getenv("SEARCH_IMPL", "vector").lower()  # vector | keyword
+SEARCH_IMPL = os.getenv("SEARCH_IMPL", "vector").lower()  # vector | keyword | chroma (бонус)
+if SEARCH_IMPL == "keyword":
+    SEARCH_FUNCTION = keyword_search_docs
+elif SEARCH_IMPL == "chroma":
+    from chroma_store import chroma_search_docs as SEARCH_FUNCTION  # chromadb нужен только в этом режиме
+else:
+    SEARCH_FUNCTION = search_docs
 
 # Описания инструментов для модели (JSON Schema). Модель видит только это,
 # а не код функций: по name и description она решает, что и когда вызвать.
@@ -447,7 +453,7 @@ TOOL_FUNCTIONS = {
     "write_file": write_file,
     "get_random_card": get_random_card,
     "save_result": save_result,
-    "search_docs": keyword_search_docs if SEARCH_IMPL == "keyword" else search_docs,  # шаг 6: SEARCH_IMPL
+    "search_docs": SEARCH_FUNCTION,  # шаг 6 + бонус: vector (по умолчанию) | keyword | chroma
     "remember": remember,
     "forget": forget,
 }
