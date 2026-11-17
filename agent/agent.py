@@ -275,7 +275,10 @@ def save_result(card_id: int, correct: bool) -> str:
 # ======================= ПОИСК ПО ДОКУМЕНТАМ =======================
 # Лаб. 4: реализация поиска — в rag.py. Шаг 4: инструмент search_docs теперь векторный
 # (эмбеддинги + индекс agent/index/), старый keyword_search_docs остался в rag.py для сравнения.
-from rag import search_docs
+from rag import keyword_search_docs, search_docs
+
+# Шаг 6: какой поиск отдать агенту под именем search_docs — для сравнения токенов keyword vs vector
+SEARCH_IMPL = os.getenv("SEARCH_IMPL", "vector").lower()  # vector | keyword
 
 # Описания инструментов для модели (JSON Schema). Модель видит только это,
 # а не код функций: по name и description она решает, что и когда вызвать.
@@ -444,7 +447,7 @@ TOOL_FUNCTIONS = {
     "write_file": write_file,
     "get_random_card": get_random_card,
     "save_result": save_result,
-    "search_docs": search_docs,
+    "search_docs": keyword_search_docs if SEARCH_IMPL == "keyword" else search_docs,  # шаг 6: SEARCH_IMPL
     "remember": remember,
     "forget": forget,
 }
@@ -669,6 +672,7 @@ def main():
     save = lambda: save_session(session_id, messages)
 
     print(f"Агент запущен. Рабочая папка: {WORKSPACE}")
+    print(f"search_docs: {SEARCH_IMPL}")
     print("Для выхода введите 'exit' или нажмите Ctrl+C.")
 
     while True:

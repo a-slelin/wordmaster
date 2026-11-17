@@ -6,7 +6,7 @@
 
 import re
 
-from rag import EMBED_MODEL, MIN_SCORE, get_index, keyword_search_docs, search_docs
+from rag import CHUNK_OVERLAP, CHUNK_SIZE, EMBED_MODEL, MIN_SCORE, get_index, keyword_search_docs, search_docs
 
 # 10 вопросов СВОИМИ словами: (вопрос, тип, файлы, где лежит ответ)
 # «перефраз» — в документе нет слов вопроса, смысл тот же; «термин» — точное слово/код из документа.
@@ -63,7 +63,8 @@ def short(files: list[str]) -> str:
 
 def main() -> None:
     get_index()  # индекс строим/грузим заранее, чтобы лог INDEX не разрывал таблицу
-    print(f"Модель эмбеддингов: {EMBED_MODEL}, MIN_SCORE={MIN_SCORE}, вопросов: {len(QUESTIONS)}\n")
+    print(f"Модель эмбеддингов: {EMBED_MODEL}, size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP}, "
+          f"MIN_SCORE={MIN_SCORE}, вопросов: {len(QUESTIONS)}\n")
 
     print("| N  | Вопрос | Тип | Где ответ | keyword top-3 | vector top-3 | hybrid top-3 |")
     print("|----|--------|-----|-----------|---------------|--------------|--------------|")
@@ -86,6 +87,16 @@ def main() -> None:
             hits = sum(1 for q, _, exp in subset if exp & set(search(q, 3)))
             row.append(f"{name} {hits}/{len(subset)}")
         print(f"  {kind:<9} " + ", ".join(row))
+
+    # Шаг 6: сколько контекста добавляет один вызов инструмента (средняя длина результата по 10 вопросам)
+    print("\nДлина результата search_docs (среднее по 10 вопросам, символы / оценка len//4 из лаб. 3):")
+    for k in (3, 5):
+        row = []
+        for name, tool in (("keyword", keyword_search_docs), ("vector", search_docs)):
+            lengths = [len(tool(q, k)) for q, _, _ in QUESTIONS]
+            avg = sum(lengths) / len(lengths)
+            row.append(f"{name} {avg:.0f} симв. ≈ {avg / 4:.0f} ток. (макс. {max(lengths)})")
+        print(f"  k={k}: " + "; ".join(row))
 
 
 if __name__ == "__main__":
