@@ -46,6 +46,69 @@ def cosine(a, b) -> float:
     return float(np.dot(a, b) / norm)
 
 
+# ======================= ШАГ 2: CHUNKING =======================
+
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "800"))        # макс. длина фрагмента в символах
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))  # перекрытие соседних окон одного раздела
+
+HEADING_RE = re.compile(r"^(#{1,3})\s+(.*?)\s*$")  # заголовки markdown: #, ##, ###
+
+
+def split_windows(text: str, size: int, overlap: int) -> list[str]:
+    """Режет текст окнами по size символов; каждое следующее окно начинается на overlap раньше конца
+    предыдущего (шаг = size - overlap). Короткий текст возвращается одним окном."""
+    if len(text) <= size:
+        return [text]
+    step = size - overlap
+    windows = []
+    start = 0
+    while True:
+        windows.append(text[start:start + size])
+        if start + size >= len(text):  # последнее окно дошло до конца текста
+            break
+        start += step
+    return windows
+
+
+def chunk_markdown(path, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[dict]:
+    """Фрагменты markdown-файла: [{"file", "title", "text"}, ...].
+    1) делим по заголовкам #/##/###; 2) длинный раздел режем окнами size/overlap;
+    3) раздел без текста (только заголовок) пропускаем."""
+    if not 0 <= overlap < size:
+        raise ValueError(f"нужно 0 <= overlap < size, получено size={size}, overlap={overlap}")
+    path = Path(path)
+    text = path.read_text(encoding="utf-8")
+
+    sections = []          # [(заголовок, [строки раздела])]
+    title = path.stem      # текст до первого заголовка получает имя файла
+    lines = []
+    for line in text.splitlines():
+        match = HEADING_RE.match(line)
+        if match:
+            sections.append((title, lines))
+            title, lines = match.group(2) or path.stem, []
+        else:
+            lines.append(line)
+    sections.append((title, lines))
+
+    chunks = []
+    for title, lines in sections:
+        body = "\n".join(lines).strip()
+        if not body:  # только заголовок — пропускаем
+            continue
+        for piece in split_windows(body, size, overlap):
+            chunks.append({"file": path.name, "title": title, "text": piece})
+    return chunks
+
+
+def chunk_docs(size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[dict]:
+    """Фрагменты всех .md из docs/ в стабильном порядке (по имени файла)."""
+    chunks = []
+    for path in sorted(DOCS_DIR.glob("*.md")):
+        chunks.extend(chunk_markdown(path, size, overlap))
+    return chunks
+
+
 # ======================= KEYWORD-ПОИСК (из лаб. 3, для сравнения) =======================
 
 STOP_WORDS = {"как", "что", "где", "какой", "какая", "какие", "когда", "для", "или", "это", "найди",
@@ -133,13 +196,48 @@ def demo_pairs() -> None:
           f"'удалить аккаунт' / 'погода в Москве' = {cosine(ref[0], ref[2]):.3f}")
 
 
+def demo_chunks(size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> None:
+    """Шаг 2: число фрагментов по файлам, автоматические проверки и 3 фрагмента целиком."""
+    print(f"chunk_markdown: size={size}, overlap={overlap}\n")
+    all_chunks = []
+    for path in sorted(DOCS_DIR.glob("*.md")):
+        chunks = chunk_markdown(path, size, overlap)
+        all_chunks.extend(chunks)
+        longest = max(len(c["text"]) for c in chunks)
+        print(f"  {path.name:<16} {len(chunks):>2} фрагм., самый длинный {longest} симв.")
+    print(f"  {'ИТОГО':<16} {len(all_chunks):>2} фрагм.\n")
+
+    # Проверки из задания
+    too_long = [c for c in all_chunks if len(c["text"]) > size]
+    no_meta = [c for c in all_chunks if not c["file"] or not c["title"]]
+    pairs = [(a, b) for a, b in zip(all_chunks, all_chunks[1:])
+             if a["file"] == b["file"] and a["title"] == b["title"]]  # соседние окна одного раздела
+    bad_overlap = [(a, b) for a, b in pairs if overlap and a["text"][-overlap:] != b["text"][:overlap]]
+    print(f"Проверка: длиннее size={size}: {len(too_long)}; без file/title: {len(no_meta)}; "
+          f"пар соседних окон: {len(pairs)}, из них без перекрытия: {len(bad_overlap)}")
+
+    # Показываем 3 фрагмента целиком: два соседних окна длинного раздела + один обычный
+    shown = [pairs[0][0], pairs[0][1]] if pairs else []
+    shown.append(next(c for c in all_chunks if c["file"] == "training.md"))
+    for c in shown:
+        print(f"\n----- [{c['file']} § {c['title']}] {len(c['text'])} симв. -----\n{c['text']}")
+    if pairs:
+        a, b = pairs[0]
+        print(f"\n----- перекрытие {overlap} симв. (конец окна 1 == начало окна 2) -----\n{a['text'][-overlap:]}")
+
+
 if __name__ == "__main__":
     # py agent/rag.py keyword — шаг 0: старый поиск работает из нового модуля
     # py agent/rag.py pairs   — шаг 1: длина вектора и косинусы 6 пар
+    # py agent/rag.py chunks [size] [overlap] — шаг 2: нарезка docs на фрагменты
     command = sys.argv[1] if len(sys.argv) > 1 else "keyword"
     if command == "keyword":
         print(keyword_search_docs("тема по умолчанию", 2))
     elif command == "pairs":
         demo_pairs()
+    elif command == "chunks":
+        size = int(sys.argv[2]) if len(sys.argv) > 2 else CHUNK_SIZE
+        overlap = int(sys.argv[3]) if len(sys.argv) > 3 else CHUNK_OVERLAP
+        demo_chunks(size, overlap)
     else:
-        print(f"Неизвестная команда '{command}'. Доступно: keyword, pairs")
+        print(f"Неизвестная команда '{command}'. Доступно: keyword, pairs, chunks")
