@@ -167,6 +167,76 @@ def load_or_build_index(size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) ->
     return index
 
 
+# ======================= ШАГ 4: ВЕКТОРНЫЙ search_docs =======================
+
+# Порог «похожести»: ниже него считаем, что в docs ответа нет. Подобран на своих данных (demo_calibrate),
+# у каждой модели свой масштаб косинуса и свой «фон» несвязанных текстов.
+MIN_SCORE = float(os.getenv("MIN_SCORE", "0.49"))  # середина зазора по demo_calibrate: 0.445 … 0.531
+SNIPPET_LEN = 400  # сколько символов фрагмента отдаём модели
+
+_cache = {"hash": None, "index": None, "matrix": None}  # индекс в памяти процесса
+
+
+def get_index() -> tuple[dict, np.ndarray]:
+    """Индекс + матрица нормированных векторов. Хэш docs проверяется на каждый вызов (дёшево: чтение
+    10 файлов), поэтому правка docs/ во время работы агента тоже приведёт к пересборке."""
+    if _cache["hash"] != docs_hash(CHUNK_SIZE, CHUNK_OVERLAP):
+        index = load_or_build_index()
+        matrix = np.asarray(index["vectors"], dtype=np.float32)
+        if len(matrix):
+            matrix /= np.linalg.norm(matrix, axis=1, keepdims=True)  # строки длины 1
+        _cache.update(hash=index["hash"], index=index, matrix=matrix)
+    return _cache["index"], _cache["matrix"]
+
+
+def vector_search(query: str, k: int = 3) -> list[tuple[float, dict]]:
+    """Top-k фрагментов по косинусу: [(cos, {"file", "title", "text"}), ...] по убыванию cos."""
+    index, matrix = get_index()
+    if not index["chunks"]:
+        return []
+    q = np.asarray(embed([query])[0], dtype=np.float32)  # запрос — ТОЙ ЖЕ моделью, что и индекс
+    q /= np.linalg.norm(q)
+    scores = matrix @ q  # для векторов длины 1 скалярное произведение = cos (формула cosine() из шага 1)
+    top = np.argsort(-scores)[:k]
+    return [(float(scores[i]), index["chunks"][i]) for i in top]
+
+
+def search_docs(query: str, limit: int = 3) -> str:
+    """Векторный поиск по docs/. Интерфейс для модели прежний: query, limit 1–5."""
+    if not query or not query.strip():
+        return "ОШИБКА: пустой запрос"
+    try:
+        limit = int(limit)  # модель иногда присылает "3" строкой
+    except (TypeError, ValueError):
+        return "ОШИБКА: limit должен быть целым числом от 1 до 5"
+    if not 1 <= limit <= 5:
+        return "ОШИБКА: limit должен быть целым числом от 1 до 5"
+    if not DOCS_DIR.is_dir() or not any(DOCS_DIR.glob("*.md")):
+        return "ОШИБКА: docs/ пуста — нет .md файлов для поиска"
+
+    try:
+        hits = vector_search(query.strip(), limit)
+    except Exception as e:  # Ollama не запущена, модель не скачана и т. п.
+        return f"ОШИБКА: эмбеддинг-модель {EMBED_MODEL} недоступна ({e})"
+    if not hits:
+        return "ОШИБКА: docs/ пуста — в индексе нет ни одного фрагмента"
+
+    best = hits[0][0]
+    if best < MIN_SCORE:
+        return (f"ОШИБКА: нет похожих фрагментов (лучший cos={best:.2f} < MIN_SCORE={MIN_SCORE}). "
+                f"В документации нет ответа на этот вопрос — так и скажи пользователю.")
+    hits = [(score, c) for score, c in hits if score >= MIN_SCORE]  # слабые хвосты не тратят контекст
+    parts = []
+    for score, c in hits:
+        text = c["text"] if len(c["text"]) <= SNIPPET_LEN else c["text"][:SNIPPET_LEN] + "…"
+        parts.append(f"[{c['file']} § {c['title']}] cos={score:.2f}\n{text}")
+    best_ref = f"[{hits[0][1]['file']} § {hits[0][1]['title']}]"
+    # Напоминание рядом с данными: правило из системного промпта модель на длинном контексте «забывает».
+    # Формулировка не должна звучать как «отвечай сейчас»: попытка 2 из-за неё пропустила get_random_card.
+    return "\n\n".join(parts) + (f"\n\nИсточник: {best_ref}. Если для задачи нужны ещё инструменты — "
+                                 f"сначала вызови их, а источник укажи в итоговом ответе пользователю.")
+
+
 # ======================= KEYWORD-ПОИСК (из лаб. 3, для сравнения) =======================
 
 STOP_WORDS = {"как", "что", "где", "какой", "какая", "какие", "когда", "для", "или", "это", "найди",
@@ -293,11 +363,37 @@ def demo_index(size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> None:
     print(f"  векторы: {len(index['vectors'])} x {len(index['vectors'][0]) if index['vectors'] else 0}")
 
 
+# Запросы для подбора MIN_SCORE: по теме docs (своими словами) и заведомо не по теме
+CALIBRATE_ON = ["как стереть свой профиль", "что будет, если много раз ввести неверный пароль",
+                "можно ли править чужой набор слов", "с какой темы начинается тренировка",
+                "на чём написан сервер", "когда слово считается запомненным"]
+CALIBRATE_OFF = ["рецепт борща", "курс биткоина на сегодня", "как поменять масло в машине",
+                 "погода в Москве на завтра", "кто выиграл чемпионат мира по футболу",
+                 "сколько лап у паука"]
+
+
+def demo_calibrate() -> None:
+    """Шаг 4: лучший cos для запросов по теме и не по теме → где поставить MIN_SCORE."""
+    get_index()
+    rows = []
+    for kind, queries in (("по теме", CALIBRATE_ON), ("НЕ по теме", CALIBRATE_OFF)):
+        for q in queries:
+            score, c = vector_search(q, 1)[0]
+            rows.append((kind, score))
+            print(f"  {kind:<10} cos={score:.3f}  {q!r:<55} → [{c['file']} § {c['title']}]")
+    on = [s for k, s in rows if k == "по теме"]
+    off = [s for k, s in rows if k != "по теме"]
+    print(f"\nпо теме: min={min(on):.3f}; не по теме: max={max(off):.3f}; "
+          f"середина зазора = {(min(on) + max(off)) / 2:.3f}; сейчас MIN_SCORE={MIN_SCORE}")
+
+
 if __name__ == "__main__":
     # py agent/rag.py keyword — шаг 0: старый поиск работает из нового модуля
     # py agent/rag.py pairs   — шаг 1: длина вектора и косинусы 6 пар
     # py agent/rag.py chunks [size] [overlap] — шаг 2: нарезка docs на фрагменты
     # py agent/rag.py index [size] [overlap]  — шаг 3: индекс на диске (cache hit / rebuilt)
+    # py agent/rag.py calibrate               — шаг 4: подбор порога MIN_SCORE
+    # py agent/rag.py search "запрос" [limit] — шаг 4: векторный search_docs (и keyword для сравнения)
     command = sys.argv[1] if len(sys.argv) > 1 else "keyword"
     if command == "keyword":
         print(keyword_search_docs("тема по умолчанию", 2))
@@ -311,5 +407,12 @@ if __name__ == "__main__":
         size = int(sys.argv[2]) if len(sys.argv) > 2 else CHUNK_SIZE
         overlap = int(sys.argv[3]) if len(sys.argv) > 3 else CHUNK_OVERLAP
         demo_index(size, overlap)
+    elif command == "calibrate":
+        demo_calibrate()
+    elif command == "search":
+        query = sys.argv[2] if len(sys.argv) > 2 else "как стереть свой профиль"
+        limit = int(sys.argv[3]) if len(sys.argv) > 3 else 3
+        print(f"=== vector search_docs({query!r}, {limit}) ===\n{search_docs(query, limit)}")
+        print(f"\n=== keyword_search_docs({query!r}, {limit}) ===\n{keyword_search_docs(query, limit)}")
     else:
-        print(f"Неизвестная команда '{command}'. Доступно: keyword, pairs, chunks, index")
+        print(f"Неизвестная команда '{command}'. Доступно: keyword, pairs, chunks, index, calibrate, search")
