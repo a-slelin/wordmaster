@@ -1,5 +1,7 @@
 # agent/rag.py — Лаб. 4: поиск по документации (keyword из лаб. 3 → поиск по смыслу)
 
+import hashlib
+import json
 import os
 import re
 import sys
@@ -11,8 +13,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 AGENT_DIR = Path(__file__).parent.resolve()
-WORKSPACE = AGENT_DIR / "workspace"   # песочница агента
-DOCS_DIR = WORKSPACE / "docs"         # корпус для search_docs
+WORKSPACE = AGENT_DIR / "workspace"  # песочница агента
+DOCS_DIR = WORKSPACE / "docs"  # корпус для search_docs
 
 load_dotenv(AGENT_DIR / ".env")
 
@@ -48,7 +50,7 @@ def cosine(a, b) -> float:
 
 # ======================= ШАГ 2: CHUNKING =======================
 
-CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "800"))        # макс. длина фрагмента в символах
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "800"))  # макс. длина фрагмента в символах
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))  # перекрытие соседних окон одного раздела
 
 HEADING_RE = re.compile(r"^(#{1,3})\s+(.*?)\s*$")  # заголовки markdown: #, ##, ###
@@ -79,8 +81,8 @@ def chunk_markdown(path, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -
     path = Path(path)
     text = path.read_text(encoding="utf-8")
 
-    sections = []          # [(заголовок, [строки раздела])]
-    title = path.stem      # текст до первого заголовка получает имя файла
+    sections = []  # [(заголовок, [строки раздела])]
+    title = path.stem  # текст до первого заголовка получает имя файла
     lines = []
     for line in text.splitlines():
         match = HEADING_RE.match(line)
@@ -107,6 +109,62 @@ def chunk_docs(size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[dic
     for path in sorted(DOCS_DIR.glob("*.md")):
         chunks.extend(chunk_markdown(path, size, overlap))
     return chunks
+
+
+# ======================= ШАГ 3: ИНДЕКС НА ДИСКЕ С ПЕРЕСЧЁТОМ ПО ХЭШУ =======================
+
+# Индекс лежит ВНЕ песочницы workspace/: агент через write_file не может его затереть или подменить
+INDEX_DIR = AGENT_DIR / "index"
+INDEX_FILE = INDEX_DIR / "docs_index.json"
+EMBED_BATCH = 64  # сколько фрагментов в одном запросе к эмбеддинг-модели
+
+
+def docs_hash(size: int, overlap: int) -> str:
+    """sha256 от всего, что влияет на индекс: модель, size/overlap, имена и содержимое всех .md в docs/."""
+    h = hashlib.sha256()
+    h.update(f"model={EMBED_MODEL}|size={size}|overlap={overlap}".encode("utf-8"))
+    for path in sorted(DOCS_DIR.glob("*.md")):
+        h.update(b"\0" + path.name.encode("utf-8") + b"\0")  # \0 — разделитель, чтобы файлы не «склеились»
+        h.update(path.read_bytes())
+    return h.hexdigest()
+
+
+def chunk_input(chunk: dict) -> str:
+    """Что отдаём эмбеддинг-модели: заголовок раздела + текст (заголовок добавляет смысла коротким окнам)."""
+    return f"{chunk['title']}\n{chunk['text']}"
+
+
+def load_or_build_index(size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> dict:
+    """Загружает индекс с диска, если хэш совпал (без вызовов модели), иначе пересчитывает и сохраняет.
+    Индекс: {"hash", "model", "size", "overlap", "chunks": [{file, title, text}], "vectors": [[...]]}."""
+    t0 = time.perf_counter()
+    current_hash = docs_hash(size, overlap)
+
+    if INDEX_FILE.exists():
+        try:
+            index = json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            index = None  # битый файл — просто пересоберём
+        if index and index.get("hash") == current_hash:
+            print(f"INDEX: cache hit, {len(index['chunks'])} chunks, {time.perf_counter() - t0:.2f} s")
+            return index
+        reason = "хэш не совпал" if index else "файл индекса повреждён"
+    else:
+        reason = "файла индекса нет"
+
+    chunks = chunk_docs(size, overlap)
+    vectors = []
+    for i in range(0, len(chunks), EMBED_BATCH):  # пачками, а не запросом на каждый фрагмент
+        vectors.extend(embed([chunk_input(c) for c in chunks[i:i + EMBED_BATCH]]))
+
+    index = {"hash": current_hash, "model": EMBED_MODEL, "size": size, "overlap": overlap,
+             "chunks": chunks, "vectors": vectors}
+    INDEX_DIR.mkdir(exist_ok=True)
+    tmp = INDEX_FILE.with_suffix(".tmp")  # пишем во временный файл и подменяем: не останется «половины» индекса
+    tmp.write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(INDEX_FILE)
+    print(f"INDEX: rebuilt, {len(chunks)} chunks, {time.perf_counter() - t0:.2f} s ({reason})")
+    return index
 
 
 # ======================= KEYWORD-ПОИСК (из лаб. 3, для сравнения) =======================
@@ -226,10 +284,20 @@ def demo_chunks(size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> None:
         print(f"\n----- перекрытие {overlap} симв. (конец окна 1 == начало окна 2) -----\n{a['text'][-overlap:]}")
 
 
+def demo_index(size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> None:
+    """Шаг 3: загрузить или пересобрать индекс и показать, что в нём лежит."""
+    index = load_or_build_index(size, overlap)
+    print(f"  файл:    {INDEX_FILE.relative_to(AGENT_DIR.parent)} ({INDEX_FILE.stat().st_size / 1024:.0f} KB)")
+    print(f"  модель:  {index['model']}, size={index['size']}, overlap={index['overlap']}")
+    print(f"  хэш:     {index['hash'][:16]}...")
+    print(f"  векторы: {len(index['vectors'])} x {len(index['vectors'][0]) if index['vectors'] else 0}")
+
+
 if __name__ == "__main__":
     # py agent/rag.py keyword — шаг 0: старый поиск работает из нового модуля
     # py agent/rag.py pairs   — шаг 1: длина вектора и косинусы 6 пар
     # py agent/rag.py chunks [size] [overlap] — шаг 2: нарезка docs на фрагменты
+    # py agent/rag.py index [size] [overlap]  — шаг 3: индекс на диске (cache hit / rebuilt)
     command = sys.argv[1] if len(sys.argv) > 1 else "keyword"
     if command == "keyword":
         print(keyword_search_docs("тема по умолчанию", 2))
@@ -239,5 +307,9 @@ if __name__ == "__main__":
         size = int(sys.argv[2]) if len(sys.argv) > 2 else CHUNK_SIZE
         overlap = int(sys.argv[3]) if len(sys.argv) > 3 else CHUNK_OVERLAP
         demo_chunks(size, overlap)
+    elif command == "index":
+        size = int(sys.argv[2]) if len(sys.argv) > 2 else CHUNK_SIZE
+        overlap = int(sys.argv[3]) if len(sys.argv) > 3 else CHUNK_OVERLAP
+        demo_index(size, overlap)
     else:
-        print(f"Неизвестная команда '{command}'. Доступно: keyword, pairs, chunks")
+        print(f"Неизвестная команда '{command}'. Доступно: keyword, pairs, chunks, index")
